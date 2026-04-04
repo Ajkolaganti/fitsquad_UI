@@ -4,8 +4,8 @@
   "description": "Gym accountability with your squad",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#eef4ef",
+  "theme_color": "#0d9f6e",
   "orientation": "portrait",
   "icons": [
     {

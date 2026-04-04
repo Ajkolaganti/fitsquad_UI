@@ -10,8 +10,7 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Copy, Flame, Users } from "lucide-react";
-import { Leaderboard } from "@/components/Leaderboard";
-import { ChallengeChat } from "@/components/ChallengeChat";
+import { ChallengeGymFeed } from "@/components/ChallengeGymFeed";
 import { LocationTracker } from "@/components/LocationTracker";
 import { Timer } from "@/components/Timer";
 import { useLocation } from "@/hooks/useLocation";
@@ -252,7 +251,7 @@ export default function ChallengeDetailPage() {
   if (!hydrated || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
       </div>
     );
   }
@@ -262,7 +261,7 @@ export default function ChallengeDetailPage() {
       <div className="px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <Link
           href="/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-zinc-400"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-pacer-muted"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -279,31 +278,31 @@ export default function ChallengeDetailPage() {
       {/* Back nav */}
       <Link
         href="/dashboard"
-        className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+        className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-pacer-muted transition hover:text-pacer-ink"
       >
         <ArrowLeft className="h-4 w-4" />
         Dashboard
       </Link>
 
       {/* Challenge header */}
-      <div className="mb-6 overflow-hidden rounded-[22px] border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl">
-        <div className="h-1 w-full bg-gradient-to-r from-apple-blue to-apple-purple" />
+      <div className="mb-6 overflow-hidden rounded-[22px] border border-pacer-border bg-white shadow-glass-sm backdrop-blur-xl">
+        <div className="h-1 w-full bg-gradient-to-r from-pacer-primary to-teal-400" />
         <div className="p-5">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-pacer-ink">
             {challenge.name}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-pacer-muted">
             {challenge.daysPerWeek}× / week · {challenge.durationMinutes} min goal
           </p>
 
           {prog && (
             <div className="mt-4 flex items-center gap-3">
-              <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-zinc-300">
-                <Flame className="h-3.5 w-3.5 text-apple-orange" />
+              <span className="flex items-center gap-1.5 rounded-full bg-pacer-cream px-3 py-1.5 text-xs font-semibold text-pacer-ink">
+                <Flame className="h-3.5 w-3.5 text-ember-500" />
                 {prog.streak} day streak
               </span>
-              <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-zinc-300">
-                <Users className="h-3.5 w-3.5 text-apple-blue" />
+              <span className="flex items-center gap-1.5 rounded-full bg-pacer-cream px-3 py-1.5 text-xs font-semibold text-pacer-ink">
+                <Users className="h-3.5 w-3.5 text-pacer-primary" />
                 {challenge.participants.length} in squad
               </span>
             </div>
@@ -312,14 +311,14 @@ export default function ChallengeDetailPage() {
           {prog && (
             <div className="mt-4">
               <div className="mb-1.5 flex justify-between text-xs">
-                <span className="text-zinc-500">This week</span>
-                <span className="font-semibold text-zinc-300">
+                <span className="text-pacer-muted">This week</span>
+                <span className="font-semibold text-pacer-ink">
                   {prog.completedDaysThisWeek}/{prog.weeklyGoal} days
                 </span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+              <div className="h-1.5 overflow-hidden rounded-full bg-pacer-border/80">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-apple-blue to-apple-purple transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-pacer-primary to-teal-400 transition-all duration-700"
                   style={{
                     width: `${Math.round((prog.completedDaysThisWeek / prog.weeklyGoal) * 100)}%`,
                   }}
@@ -331,22 +330,22 @@ export default function ChallengeDetailPage() {
       </div>
 
       {challenge.inviteCode && inviteUrl ? (
-        <div className="mb-5 rounded-[22px] border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-xl">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="mb-5 rounded-[22px] border border-pacer-border bg-white p-5 shadow-sm backdrop-blur-xl">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
             Invite link
           </p>
-          <p className="break-all rounded-xl bg-black/40 px-3 py-2.5 font-mono text-xs text-zinc-300">
+          <p className="break-all rounded-xl bg-pacer-cream px-3 py-2.5 font-mono text-xs text-pacer-ink">
             {inviteUrl}
           </p>
           <button
             type="button"
             onClick={() => void copyInviteLink()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-apple-green py-3.5 text-sm font-semibold text-black transition active:scale-[0.99] hover:opacity-90"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white transition active:scale-[0.99] hover:bg-pacer-primary-hover"
           >
             <Copy className="h-4 w-4" />
             {inviteCopied ? "Copied!" : "Copy link"}
           </button>
-          <p className="mt-3 text-center text-xs text-zinc-500">
+          <p className="mt-3 text-center text-xs text-pacer-muted">
             Share this link anytime so friends can join this challenge.
           </p>
         </div>
@@ -373,20 +372,36 @@ export default function ChallengeDetailPage() {
         />
       </div>
 
-      {/* Leaderboard */}
+      {/* Gym activity — who trained today & session context (squad chat lives under Squads) */}
       <div className="mb-5">
-        <Leaderboard
+        <ChallengeGymFeed
           participants={leaderboardData}
+          goalMinutes={challenge.durationMinutes}
           currentUserId={user.id}
+          myGym={{
+            minutesToday:
+              displaySeconds > 0
+                ? Math.max(1, Math.round(displaySeconds / 60))
+                : null,
+            status:
+              gymStatus === "at_gym"
+                ? "at_gym"
+                : gymStatus === "completed_today"
+                  ? "completed_today"
+                  : "not_at_gym",
+          }}
         />
+        <p className="mt-3 text-center text-[13px] text-pacer-muted">
+          Squad chat is in the{" "}
+          <Link
+            href={`/squads/${challenge.id}`}
+            className="font-semibold text-pacer-primary underline-offset-2 hover:underline"
+          >
+            Squads
+          </Link>{" "}
+          tab.
+        </p>
       </div>
-
-      {/* Squad chat (HTTP + polling — no third-party realtime) */}
-      <ChallengeChat
-        challengeId={challenge.id}
-        currentUserId={user.id}
-        apiMode={apiMode}
-      />
     </div>
   );
 }

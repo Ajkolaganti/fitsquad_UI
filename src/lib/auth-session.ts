@@ -1,5 +1,6 @@
 import type { Session, User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { setAuthToken, apiGetCurrentUser } from "@/lib/api";
+import { refreshChallengesFromServer } from "@/lib/user-challenges";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import type { User } from "@/types";
@@ -29,10 +30,12 @@ export async function syncSessionToApp(session: Session): Promise<User> {
   try {
     const u = await apiGetCurrentUser();
     useAppStore.getState().setUser(u);
+    await refreshChallengesFromServer(u.id);
     return u;
   } catch {
     const u = userFromSupabaseAuthUser(session.user);
     useAppStore.getState().setUser(u);
+    await refreshChallengesFromServer(u.id);
     return u;
   }
 }

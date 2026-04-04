@@ -3,6 +3,42 @@ import type { Challenge, User } from "@/types";
 import { setAuthToken } from "@/lib/api";
 import { clearBackendTokens } from "@/lib/auth-tokens";
 
+const CHALLENGES_STORAGE_KEY = "firsquad_challenges_v1";
+
+interface StoredChallengesPayload {
+  userId: string;
+  challenges: Challenge[];
+}
+
+function loadChallengesSnapshot(userId: string): Challenge[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CHALLENGES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as StoredChallengesPayload;
+    if (
+      !parsed ||
+      parsed.userId !== userId ||
+      !Array.isArray(parsed.challenges)
+    ) {
+      return [];
+    }
+    return parsed.challenges;
+  } catch {
+    return [];
+  }
+}
+
+function persistChallengesSnapshot(userId: string, challenges: Challenge[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: StoredChallengesPayload = { userId, challenges };
+    localStorage.setItem(CHALLENGES_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    /* quota or private mode */
+  }
+}
+
 interface AppState {
   user: User | null;
   challenges: Challenge[];
@@ -26,23 +62,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!user) {
       setAuthToken(null);
       clearBackendTokens();
-    }
-    set({ user });
-    if (typeof window !== "undefined") {
-      if (user) {
-        localStorage.setItem("firsquad_user", JSON.stringify(user));
-      } else {
+      set({ user: null, challenges: [] });
+      if (typeof window !== "undefined") {
         localStorage.removeItem("firsquad_user");
+        localStorage.removeItem(CHALLENGES_STORAGE_KEY);
       }
+      return;
+    }
+    const storedChallenges = loadChallengesSnapshot(user.id);
+    set({ user, challenges: storedChallenges });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("firsquad_user", JSON.stringify(user));
     }
   },
 
   logout: () => {
     setAuthToken(null);
     clearBackendTokens();
-    set({ user: null });
+    set({ user: null, challenges: [] });
     if (typeof window !== "undefined") {
       localStorage.removeItem("firsquad_user");
+      localStorage.removeItem(CHALLENGES_STORAGE_KEY);
     }
   },
 
@@ -56,7 +96,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  setChallenges: (challenges) => set({ challenges }),
+  setChallenges: (challenges) => {
+    set({ challenges });
+    const u = get().user;
+    if (u) persistChallengesSnapshot(u.id, challenges);
+  },
 
   upsertChallenge: (challenge) => {
     const list = get().challenges;
@@ -66,13 +110,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       prev && challenge.inviteCode == null && prev.inviteCode
         ? { ...challenge, inviteCode: prev.inviteCode }
         : challenge;
+    let next: Challenge[];
     if (i >= 0) {
-      const next = [...list];
+      next = [...list];
       next[i] = merged;
-      set({ challenges: next });
     } else {
-      set({ challenges: [merged, ...list] });
+      next = [merged, ...list];
     }
+    set({ challenges: next });
+    const u = get().user;
+    if (u) persistChallengesSnapshot(u.id, next);
   },
 }));
 

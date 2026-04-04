@@ -36,8 +36,8 @@ export default function AuthCallbackPage() {
   return (
     <div className="flex min-h-[50dvh] flex-col items-center justify-center px-6">
       <AppLogo variant="header" className="mb-8 opacity-90" />
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
-      <p className="mt-6 text-center text-sm text-zinc-400">{message}</p>
+      <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
+      <p className="mt-6 text-center text-sm text-pacer-muted">{message}</p>
     </div>
   );
 }

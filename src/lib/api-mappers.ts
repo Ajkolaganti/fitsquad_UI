@@ -36,11 +36,17 @@ export function mapLoginResponseUser(u: {
 }
 
 function mapParticipant(p: ApiChallengeParticipant): Participant {
+  const name =
+    typeof p.name === "string" && p.name.length > 0
+      ? p.name
+      : p.user?.name ?? "Member";
   return {
     userId: p.userId,
-    name: p.user.name,
+    name,
     streak: p.streak,
     completedDays: p.completedDays,
+    rank: p.rank,
+    lastCheckin: p.lastCheckin ?? null,
   };
 }
 
@@ -77,5 +83,6 @@ export function mapLeaderboardRows(rows: ApiLeaderboardRow[]): Participant[] {
     streak: r.streak,
     completedDays: r.completedDays,
     rank: r.rank,
+    lastCheckin: r.lastCheckin ?? null,
   }));
 }

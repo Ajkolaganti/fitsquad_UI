@@ -14,6 +14,7 @@ import {
   getApiErrorMessage,
   isApiConfigured,
 } from "@/lib/api";
+import { refreshChallengesFromServer } from "@/lib/user-challenges";
 import type { User } from "@/types";
 
 function mockLogin(name: string): User {
@@ -83,6 +84,7 @@ export default function LoginPage() {
       }
       const user = await apiLogin({ email: em, password: pw });
       setUser(user);
+      await refreshChallengesFromServer(user.id);
       router.replace("/dashboard");
     } catch (e: unknown) {
       setErr(getApiErrorMessage(e));
@@ -238,18 +240,18 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    "w-full rounded-2xl border border-white/[0.1] bg-white/[0.06] px-4 py-3.5 text-base text-white placeholder-zinc-500 transition focus:border-apple-blue/50 focus:ring-2 focus:ring-apple-blue/20";
+    "w-full rounded-2xl border border-pacer-border bg-white px-4 py-3.5 text-base text-pacer-ink placeholder-zinc-400 shadow-sm transition focus:border-pacer-primary/50 focus:ring-2 focus:ring-pacer-primary/15";
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col items-center px-6 pb-12 pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <div className="relative flex min-h-[100dvh] flex-col items-center px-6 pb-12 pt-[max(1.5rem,env(safe-area-inset-top))] text-pacer-ink">
       <div className="relative w-full max-w-sm py-8">
         <div className="mb-12 flex flex-col items-center text-center">
           <div className="mb-2 flex justify-center">
             <AppLogo variant="hero" priority />
           </div>
-          <p className="mt-6 max-w-[280px] text-[15px] leading-relaxed text-zinc-400">
+          <p className="mt-6 max-w-[280px] text-[15px] leading-relaxed text-pacer-muted">
             Your squad. Your gym.{" "}
-            <span className="text-zinc-200">Stay consistent.</span>
+            <span className="font-medium text-pacer-leaf">Stay consistent.</span>
           </p>
         </div>
 
@@ -257,7 +259,7 @@ export default function LoginPage() {
           {["Streaks", "Leaderboard", "GPS check-in"].map((b) => (
             <span
               key={b}
-              className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3.5 py-1.5 text-xs font-medium text-zinc-400"
+              className="rounded-full border border-pacer-border bg-white px-3.5 py-1.5 text-xs font-medium text-pacer-muted shadow-sm"
             >
               {b}
             </span>
@@ -265,7 +267,7 @@ export default function LoginPage() {
         </div>
 
         {verifiedHint && (
-          <p className="mb-4 rounded-2xl border border-apple-orange/25 bg-apple-orange/10 px-4 py-3 text-center text-sm text-zinc-200">
+          <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
             That link could not complete sign-in. Request a new one or sign in
             below.
           </p>
@@ -277,7 +279,7 @@ export default function LoginPage() {
             onSubmit={(e) => void onApiSubmit(e)}
             className="space-y-4"
           >
-            <div className="flex rounded-2xl border border-white/[0.08] p-1">
+            <div className="flex rounded-2xl border border-pacer-border bg-pacer-mist/50 p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -287,8 +289,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
                   mode === "signin"
-                    ? "bg-white/[0.12] text-white"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-white text-pacer-ink shadow-sm"
+                    : "text-pacer-muted hover:text-pacer-ink"
                 }`}
               >
                 Sign in
@@ -302,8 +304,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
                   mode === "signup"
-                    ? "bg-white/[0.12] text-white"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-white text-pacer-ink shadow-sm"
+                    : "text-pacer-muted hover:text-pacer-ink"
                 }`}
               >
                 Create account
@@ -314,7 +316,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="displayName"
-                  className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                  className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
                 >
                   Name
                 </label>
@@ -333,7 +335,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
               >
                 Email
               </label>
@@ -351,7 +353,7 @@ export default function LoginPage() {
               <div className="mb-2 flex items-center justify-between gap-2">
                 <label
                   htmlFor="password"
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
                 >
                   Password
                 </label>
@@ -360,7 +362,7 @@ export default function LoginPage() {
                     type="button"
                     disabled={loading}
                     onClick={() => void onApiForgotPassword()}
-                    className="shrink-0 text-[11px] font-medium text-apple-blue hover:text-apple-blue-hover disabled:opacity-50"
+                    className="shrink-0 text-[11px] font-medium text-pacer-primary hover:text-pacer-primary-hover disabled:opacity-50"
                   >
                     Forgot password?
                   </button>
@@ -380,19 +382,19 @@ export default function LoginPage() {
             </div>
 
             {info && (
-              <p className="rounded-2xl border border-apple-blue/25 bg-apple-blue/10 px-4 py-3 text-center text-sm text-zinc-200">
+              <p className="rounded-2xl border border-pacer-mint bg-pacer-mint/60 px-4 py-3 text-center text-sm text-pacer-ink">
                 {info}
               </p>
             )}
             {err && (
-              <p className="rounded-2xl border border-apple-red/30 bg-apple-red/10 px-4 py-3 text-center text-sm text-red-200">
+              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800">
                 {err}
               </p>
             )}
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-apple-blue py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-apple-blue-hover"
+              className="w-full rounded-2xl bg-pacer-primary py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-pacer-primary-hover"
             >
               {loading
                 ? "Please wait…"
@@ -406,7 +408,7 @@ export default function LoginPage() {
                 type="button"
                 disabled={loading}
                 onClick={() => void onResendVerification()}
-                className="w-full text-center text-sm text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
+                className="w-full text-center text-sm text-pacer-muted hover:text-pacer-ink disabled:opacity-50"
               >
                 Resend verification email
               </button>
@@ -418,7 +420,7 @@ export default function LoginPage() {
             onSubmit={(e) => void onSupabaseSubmit(e)}
             className="space-y-4"
           >
-            <div className="flex rounded-2xl border border-white/[0.08] p-1">
+            <div className="flex rounded-2xl border border-pacer-border bg-pacer-mist/50 p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -428,8 +430,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
                   mode === "signin"
-                    ? "bg-white/[0.12] text-white"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-white text-pacer-ink shadow-sm"
+                    : "text-pacer-muted hover:text-pacer-ink"
                 }`}
               >
                 Sign in
@@ -443,8 +445,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
                   mode === "signup"
-                    ? "bg-white/[0.12] text-white"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-white text-pacer-ink shadow-sm"
+                    : "text-pacer-muted hover:text-pacer-ink"
                 }`}
               >
                 Create account
@@ -455,7 +457,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="displayName"
-                  className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                  className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
                 >
                   Display name
                 </label>
@@ -474,7 +476,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
               >
                 Email
               </label>
@@ -492,7 +494,7 @@ export default function LoginPage() {
               <div className="mb-2 flex items-center justify-between gap-2">
                 <label
                   htmlFor="password"
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
                 >
                   Password
                 </label>
@@ -501,7 +503,7 @@ export default function LoginPage() {
                     type="button"
                     disabled={loading}
                     onClick={() => void onSupabaseForgotPassword()}
-                    className="shrink-0 text-[11px] font-medium text-apple-blue hover:text-apple-blue-hover disabled:opacity-50"
+                    className="shrink-0 text-[11px] font-medium text-pacer-primary hover:text-pacer-primary-hover disabled:opacity-50"
                   >
                     Forgot password?
                   </button>
@@ -521,19 +523,19 @@ export default function LoginPage() {
             </div>
 
             {info && (
-              <p className="rounded-2xl border border-apple-blue/25 bg-apple-blue/10 px-4 py-3 text-center text-sm text-zinc-200">
+              <p className="rounded-2xl border border-pacer-mint bg-pacer-mint/60 px-4 py-3 text-center text-sm text-pacer-ink">
                 {info}
               </p>
             )}
             {err && (
-              <p className="rounded-2xl border border-apple-red/30 bg-apple-red/10 px-4 py-3 text-center text-sm text-red-200">
+              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800">
                 {err}
               </p>
             )}
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-apple-blue py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-apple-blue-hover"
+              className="w-full rounded-2xl bg-pacer-primary py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-pacer-primary-hover"
             >
               {loading
                 ? "Please wait…"
@@ -544,13 +546,13 @@ export default function LoginPage() {
           </form>
         ) : (
           <form onSubmit={onDemoSubmit} className="space-y-4">
-            <p className="text-center text-sm text-zinc-500">
+            <p className="text-center text-sm text-pacer-muted">
               Offline demo — no API configured
             </p>
             <div>
               <label
                 htmlFor="demoName"
-                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
               >
                 Your name
               </label>
@@ -565,14 +567,14 @@ export default function LoginPage() {
               />
             </div>
             {err && (
-              <p className="rounded-2xl border border-apple-red/30 bg-apple-red/10 px-4 py-3 text-sm text-red-200">
+              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                 {err}
               </p>
             )}
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-apple-blue py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-apple-blue-hover"
+              className="w-full rounded-2xl bg-pacer-primary py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-pacer-primary-hover"
             >
               {loading ? "Getting ready…" : "Continue"}
             </button>

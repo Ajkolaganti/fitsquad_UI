@@ -1,12 +1,12 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { DM_Sans, Plus_Jakarta_Sans } from "next/font/google";
 import { MobileShell } from "@/components/MobileShell";
 import { Providers } from "@/components/Providers";
 
-const inter = Inter({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -20,8 +20,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export const metadata: Metadata = {
   ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
-  title: "FirSquad — Gym accountability",
-  description: "Check in, hold streaks, stay consistent with your crew.",
+  title: "FirSquad — Gym accountability & challenges",
+  description:
+    "Your squad, your gym — track check-ins, challenges, and streaks together.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/Logo.png",
@@ -29,13 +30,13 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "FirSquad",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#0d9f6e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -48,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`}>
+    <html lang="en" className={`${dmSans.variable} ${plusJakarta.variable}`}>
       <body className="font-sans">
         <Providers>
           <MobileShell>{children}</MobileShell>

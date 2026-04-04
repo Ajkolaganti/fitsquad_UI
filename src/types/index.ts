@@ -32,6 +32,8 @@ export interface Participant {
   streak: number;
   completedDays: number;
   rank?: number;
+  /** ISO timestamp of last check-in at gym (from API leaderboard / challenge). */
+  lastCheckin?: string | null;
 }
 
 export interface ActivityItem {

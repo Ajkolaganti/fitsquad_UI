@@ -21,37 +21,37 @@ function formatTime(iso: string) {
 function getItemAccent(message: string): { dot: string; rowBg: string } {
   const m = message.toLowerCase();
   if (m.includes("complet") || m.includes("done") || m.includes("finish")) {
-    return { dot: "bg-apple-green", rowBg: "hover:bg-apple-green/[0.06]" };
+    return { dot: "bg-pacer-primary", rowBg: "hover:bg-pacer-mint/50" };
   }
   if (m.includes("entered") || m.includes("checked in") || m.includes("started")) {
-    return { dot: "bg-apple-blue", rowBg: "hover:bg-apple-blue/[0.06]" };
+    return { dot: "bg-sky-500", rowBg: "hover:bg-sky-50" };
   }
   if (m.includes("missed") || m.includes("skip")) {
-    return { dot: "bg-apple-red", rowBg: "hover:bg-apple-red/[0.06]" };
+    return { dot: "bg-apple-red", rowBg: "hover:bg-red-50" };
   }
-  return { dot: "bg-zinc-500", rowBg: "hover:bg-white/[0.04]" };
+  return { dot: "bg-pacer-muted", rowBg: "hover:bg-pacer-cream/80" };
 }
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
   return (
-    <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-white/[0.04] shadow-glass-sm backdrop-blur-xl">
-      <div className="border-b border-white/[0.06] px-5 py-4">
+    <div className="overflow-hidden rounded-[22px] border border-pacer-border bg-white shadow-glass-sm backdrop-blur-xl">
+      <div className="border-b border-pacer-border px-5 py-4">
         <div className="flex items-center gap-2">
           <span className="text-lg">⚡</span>
           <div>
-            <h3 className="font-display text-base font-semibold text-white">
+            <h3 className="font-display text-base font-semibold text-pacer-ink">
               Squad Activity
             </h3>
-            <p className="text-xs text-zinc-500">Recent from your crew</p>
+            <p className="text-xs text-pacer-muted">Recent from your crew</p>
           </div>
         </div>
       </div>
 
-      <ul className="max-h-72 divide-y divide-white/[0.04] overflow-y-auto">
+      <ul className="max-h-72 divide-y divide-pacer-border/60 overflow-y-auto">
         {items.length === 0 ? (
           <li className="px-5 py-10 text-center">
             <p className="text-3xl">🏋️</p>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-pacer-muted">
               No activity yet. Check in to get started.
             </p>
           </li>
@@ -65,10 +65,10 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
               >
                 <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm leading-snug text-zinc-200">
+                  <p className="text-sm leading-snug text-pacer-ink">
                     {item.message}
                   </p>
-                  <p className="mt-1 text-[11px] text-zinc-600">
+                  <p className="mt-1 text-[11px] text-pacer-muted">
                     {formatTime(item.createdAt)}
                   </p>
                 </div>

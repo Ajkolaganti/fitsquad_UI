@@ -7,6 +7,7 @@ import {
   setAuthToken,
 } from "@/lib/api";
 import { syncSessionToApp } from "@/lib/auth-session";
+import { refreshChallengesFromServer } from "@/lib/user-challenges";
 import {
   clearBackendTokens,
   getStoredBackendAccessToken,
@@ -43,6 +44,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           const u = await apiGetCurrentUser();
           if (cancelled) return;
           useAppStore.getState().setUser(u);
+          await refreshChallengesFromServer(u.id);
+          if (cancelled) return;
           useAppStore.getState().setHydrated(true);
           return;
         } catch {

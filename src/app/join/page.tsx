@@ -54,7 +54,7 @@ function JoinInner() {
   if (!hydrated || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
       </div>
     );
   }
@@ -63,40 +63,40 @@ function JoinInner() {
     <div className="px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <Link
         href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-pacer-muted transition hover:text-pacer-ink"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
       </Link>
 
       <div className="mb-8">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-apple-blue/[0.15]">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-pacer-mint">
           <span className="text-3xl">🔗</span>
         </div>
-        <h1 className="font-display text-3xl font-bold tracking-tight text-white">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-pacer-ink">
           Join a Challenge
         </h1>
-        <p className="mt-1.5 text-sm text-zinc-500">
+        <p className="mt-1.5 text-sm text-pacer-muted">
           Paste the invite code your friend shared with you.
         </p>
       </div>
 
       <form onSubmit={onJoin} className="space-y-5">
         <div>
-          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
             Invite code
           </label>
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            className="w-full rounded-2xl border border-white/[0.1] bg-white/[0.06] px-4 py-4 text-center font-mono text-xl font-bold uppercase tracking-[0.2em] text-white placeholder-zinc-600 transition focus:border-apple-blue/50 focus:ring-2 focus:ring-apple-blue/20"
+            className="w-full rounded-2xl border border-pacer-border bg-white px-4 py-4 text-center font-mono text-xl font-bold uppercase tracking-[0.2em] text-pacer-ink placeholder-zinc-400 shadow-sm transition focus:border-pacer-primary/50 focus:ring-2 focus:ring-pacer-primary/15"
             placeholder="DEMO2026"
             autoCapitalize="characters"
           />
         </div>
 
         {err && (
-          <p className="rounded-2xl border border-apple-red/25 bg-apple-red/[0.1] px-4 py-3 text-sm text-red-200">
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {err}
           </p>
         )}
@@ -104,15 +104,15 @@ function JoinInner() {
         <button
           type="submit"
           disabled={loading || !code.trim()}
-          className="w-full rounded-2xl bg-apple-blue py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-40 hover:bg-apple-blue-hover"
+          className="w-full rounded-2xl bg-pacer-primary py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-40 hover:bg-pacer-primary-hover"
         >
           {loading ? "Joining…" : "Join squad"}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-zinc-600">
+      <p className="mt-6 text-center text-xs text-pacer-muted">
         Don&apos;t have a code?{" "}
-        <Link href="/create-challenge" className="text-apple-blue hover:underline">
+        <Link href="/create-challenge" className="font-medium text-pacer-primary hover:underline">
           Create your own challenge
         </Link>
       </p>
@@ -125,7 +125,7 @@ export default function JoinPage() {
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
         </div>
       }
     >

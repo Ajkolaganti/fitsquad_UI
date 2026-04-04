@@ -4,6 +4,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /** Pacer-inspired marketing / app shell (light, fresh green) */
+        pacer: {
+          cream: "#eef4ef",
+          mist: "#f6faf7",
+          ink: "#14221a",
+          muted: "#5c6d63",
+          border: "#d4e5dc",
+          primary: "#0d9f6e",
+          "primary-hover": "#0b8a5f",
+          mint: "#d8f0e4",
+          leaf: "#1a7f55",
+          sky: "#e3f4f9",
+        },
         ink: {
           950: "#0A0A0B",
           900: "#141416",
@@ -41,7 +54,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"],
         display: [
           "var(--font-display)",
           "system-ui",
@@ -50,10 +63,10 @@ module.exports = {
         ],
       },
       boxShadow: {
-        glass: "0 8px 32px rgba(0, 0, 0, 0.45)",
-        "glass-sm": "0 4px 24px rgba(0, 0, 0, 0.35)",
-        nav: "0 -1px 0 rgba(255, 255, 255, 0.06), 0 -12px 40px rgba(0, 0, 0, 0.5)",
-        ring: "0 0 0 1px rgba(255, 255, 255, 0.06) inset",
+        glass: "0 8px 32px rgba(20, 34, 26, 0.08)",
+        "glass-sm": "0 4px 24px rgba(20, 34, 26, 0.06)",
+        nav: "0 -1px 0 rgba(20, 34, 26, 0.06), 0 -8px 32px rgba(20, 34, 26, 0.08)",
+        ring: "0 0 0 1px rgba(20, 34, 26, 0.06) inset",
       },
       animation: {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",

@@ -17,7 +17,7 @@ function ResetPasswordForm() {
   const [info, setInfo] = useState<string | null>(null);
 
   const inputClass =
-    "w-full rounded-2xl border border-white/[0.1] bg-white/[0.06] px-4 py-3.5 text-base text-white placeholder-zinc-500 transition focus:border-apple-blue/50 focus:ring-2 focus:ring-apple-blue/20";
+    "w-full rounded-2xl border border-pacer-border bg-white px-4 py-3.5 text-base text-pacer-ink placeholder-zinc-400 shadow-sm transition focus:border-pacer-primary/50 focus:ring-2 focus:ring-pacer-primary/15";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,10 +58,10 @@ function ResetPasswordForm() {
           <div className="mb-2 flex justify-center">
             <AppLogo variant="hero" priority />
           </div>
-          <h1 className="mt-4 text-lg font-semibold text-white">
+          <h1 className="mt-4 text-lg font-semibold text-pacer-ink">
             Set a new password
           </h1>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-pacer-muted">
             Choose a strong password for your account.
           </p>
         </div>
@@ -70,7 +70,7 @@ function ResetPasswordForm() {
           <div>
             <label
               htmlFor="newPassword"
-              className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+              className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
             >
               New password
             </label>
@@ -87,7 +87,7 @@ function ResetPasswordForm() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+              className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted"
             >
               Confirm password
             </label>
@@ -103,12 +103,12 @@ function ResetPasswordForm() {
           </div>
 
           {info && (
-            <p className="rounded-2xl border border-apple-blue/25 bg-apple-blue/10 px-4 py-3 text-center text-sm text-zinc-200">
+            <p className="rounded-2xl border border-pacer-mint bg-pacer-mint/60 px-4 py-3 text-center text-sm text-pacer-ink">
               {info}
             </p>
           )}
           {err && (
-            <p className="rounded-2xl border border-apple-red/30 bg-apple-red/10 px-4 py-3 text-center text-sm text-red-200">
+            <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800">
               {err}
             </p>
           )}
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading || !token}
-            className="w-full rounded-2xl bg-apple-blue py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-apple-blue-hover"
+            className="w-full rounded-2xl bg-pacer-primary py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-pacer-primary-hover"
           >
             {loading ? "Updating…" : "Update password"}
           </button>
@@ -124,7 +124,7 @@ function ResetPasswordForm() {
           <button
             type="button"
             onClick={() => router.push("/login")}
-            className="w-full text-center text-sm text-zinc-500 hover:text-zinc-300"
+            className="w-full text-center text-sm text-pacer-muted hover:text-pacer-ink"
           >
             Back to sign in
           </button>
@@ -140,7 +140,7 @@ export default function ResetPasswordPage() {
       fallback={
         <div className="flex min-h-[50dvh] flex-col items-center justify-center px-6">
           <AppLogo variant="header" className="mb-8 opacity-90" />
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
         </div>
       }
     >

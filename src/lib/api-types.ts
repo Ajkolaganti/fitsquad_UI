@@ -24,14 +24,22 @@ export interface ApiUser {
   updatedAt?: string;
 }
 
+/**
+ * Participant on `GET /challenge/:id` — aligned with leaderboard row fields
+ * (`ApiLeaderboardRow`) so the UI gets the same `Participant` shape everywhere.
+ * Supports nested `user.name` (legacy) or top-level `name` from flattened responses.
+ */
 export interface ApiChallengeParticipant {
-  id: string;
+  id?: string;
   userId: string;
+  /** Flattened display name (preferred when API matches leaderboard payload). */
+  name?: string;
   completedDays: number;
   streak: number;
+  rank?: number;
   joinedAt?: string;
   lastCheckin?: string | null;
-  user: {
+  user?: {
     id: string;
     name: string;
     telegramId: string;

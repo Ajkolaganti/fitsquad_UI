@@ -8,9 +8,27 @@ export const MOCK_CHALLENGES: Challenge[] = [
     durationMinutes: 40,
     inviteCode: "DEMO2026",
     participants: [
-      { userId: "u1", name: "Ajay", streak: 12, completedDays: 3 },
-      { userId: "u2", name: "John", streak: 4, completedDays: 2 },
-      { userId: "u3", name: "Sam", streak: 8, completedDays: 4 },
+      {
+        userId: "u1",
+        name: "Ajay",
+        streak: 12,
+        completedDays: 3,
+        lastCheckin: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+      },
+      {
+        userId: "u2",
+        name: "John",
+        streak: 4,
+        completedDays: 2,
+        lastCheckin: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+      },
+      {
+        userId: "u3",
+        name: "Sam",
+        streak: 8,
+        completedDays: 4,
+        lastCheckin: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+      },
     ],
     myProgress: {
       streak: 12,
@@ -25,8 +43,20 @@ export const MOCK_CHALLENGES: Challenge[] = [
     durationMinutes: 45,
     inviteCode: "WKND01",
     participants: [
-      { userId: "u1", name: "Ajay", streak: 5, completedDays: 2 },
-      { userId: "u4", name: "Maya", streak: 9, completedDays: 3 },
+      {
+        userId: "u1",
+        name: "Ajay",
+        streak: 5,
+        completedDays: 2,
+        lastCheckin: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
+      },
+      {
+        userId: "u4",
+        name: "Maya",
+        streak: 9,
+        completedDays: 3,
+        lastCheckin: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
+      },
     ],
     myProgress: {
       streak: 5,

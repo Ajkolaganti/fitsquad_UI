@@ -69,7 +69,7 @@ export default function CreateChallengePage() {
   if (!hydrated || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
       </div>
     );
   }
@@ -119,58 +119,58 @@ export default function CreateChallengePage() {
   }
 
   const inputClass =
-    "w-full rounded-2xl border border-white/[0.1] bg-white/[0.06] px-4 py-3.5 text-base text-white placeholder-zinc-500 transition focus:border-apple-blue/50 focus:ring-2 focus:ring-apple-blue/20";
+    "w-full rounded-2xl border border-pacer-border bg-white px-4 py-3.5 text-base text-pacer-ink placeholder-zinc-400 shadow-sm transition focus:border-pacer-primary/50 focus:ring-2 focus:ring-pacer-primary/15";
 
   return (
     <div className="px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <Link
         href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition hover:text-white"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-pacer-muted transition hover:text-pacer-ink"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
       </Link>
 
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-white">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-pacer-ink">
           New Challenge
         </h1>
-        <p className="mt-1.5 text-sm text-zinc-500">
+        <p className="mt-1.5 text-sm text-pacer-muted">
           Set the rules. Share the link. Hold each other accountable.
         </p>
       </div>
 
       {created ? (
         <div className="space-y-4">
-          <div className="rounded-[22px] border border-apple-green/25 bg-apple-green/[0.08] p-6 text-center backdrop-blur-xl">
+          <div className="rounded-[22px] border border-pacer-mint bg-pacer-mint/70 p-6 text-center shadow-sm backdrop-blur-xl">
             <div className="mb-3 text-4xl">🎉</div>
-            <h2 className="font-display text-xl font-bold text-white">
+            <h2 className="font-display text-xl font-bold text-pacer-ink">
               {created.name}
             </h2>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-pacer-muted">
               {created.daysPerWeek}× / week · {created.durationMinutes} min sessions
             </p>
           </div>
 
-          <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-xl">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="rounded-[22px] border border-pacer-border bg-white p-5 shadow-sm backdrop-blur-xl">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
               Invite link
             </p>
-            <p className="break-all rounded-xl bg-black/40 px-3 py-2.5 font-mono text-xs text-zinc-300">
+            <p className="break-all rounded-xl bg-pacer-cream px-3 py-2.5 font-mono text-xs text-pacer-ink">
               {inviteUrl}
             </p>
             <div className="mt-4 flex gap-3">
               <button
                 type="button"
                 onClick={() => void copyLink()}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-apple-green py-3.5 text-sm font-semibold text-black transition active:scale-[0.99] hover:opacity-90"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white transition active:scale-[0.99] hover:bg-pacer-primary-hover"
               >
                 <Copy className="h-4 w-4" />
                 {copied ? "Copied!" : "Copy link"}
               </button>
               <Link
                 href={`/challenge/${created.id}`}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.06] py-3.5 text-center text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-pacer-border bg-pacer-mist py-3.5 text-center text-sm font-semibold text-pacer-ink transition hover:bg-white"
               >
                 <ExternalLink className="h-4 w-4" />
                 Open
@@ -181,7 +181,7 @@ export default function CreateChallengePage() {
       ) : (
         <form onSubmit={onSubmit} className="space-y-6">
           <div>
-            <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
               Challenge name
             </label>
             <input
@@ -194,7 +194,7 @@ export default function CreateChallengePage() {
           </div>
 
           <div>
-            <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
               Days per week
             </label>
             <div className="flex gap-2">
@@ -205,8 +205,8 @@ export default function CreateChallengePage() {
                   onClick={() => setDaysPerWeek(d)}
                   className={`flex h-11 flex-1 items-center justify-center rounded-2xl text-sm font-bold transition ${
                     daysPerWeek === d
-                      ? "bg-apple-blue text-white"
-                      : "border border-white/[0.1] bg-white/[0.05] text-zinc-400 hover:bg-white/[0.08]"
+                      ? "bg-pacer-primary text-white shadow-sm"
+                      : "border border-pacer-border bg-white text-pacer-muted hover:bg-pacer-mist"
                   }`}
                 >
                   {d}
@@ -216,7 +216,7 @@ export default function CreateChallengePage() {
           </div>
 
           <div>
-            <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
               Session duration
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -227,8 +227,8 @@ export default function CreateChallengePage() {
                   onClick={() => setDurationMinutes(d)}
                   className={`flex h-12 items-center justify-center rounded-2xl text-sm font-bold transition ${
                     durationMinutes === d
-                      ? "bg-apple-blue text-white"
-                      : "border border-white/[0.1] bg-white/[0.05] text-zinc-400 hover:bg-white/[0.08]"
+                      ? "bg-pacer-primary text-white shadow-sm"
+                      : "border border-pacer-border bg-white text-pacer-muted hover:bg-pacer-mist"
                   }`}
                 >
                   {d} min
@@ -238,9 +238,9 @@ export default function CreateChallengePage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
               Telegram group ID{" "}
-              <span className="normal-case font-normal text-zinc-600">(optional)</span>
+              <span className="normal-case font-normal text-pacer-muted">(optional)</span>
             </label>
             <input
               value={telegramGroupId}
@@ -248,13 +248,13 @@ export default function CreateChallengePage() {
               className={`${inputClass} font-mono text-sm`}
               placeholder="-1001234567890"
             />
-            <p className="mt-1.5 text-xs text-zinc-600">
+            <p className="mt-1.5 text-xs text-pacer-muted">
               For bot announcements in your squad group.
             </p>
           </div>
 
           {err && (
-            <p className="rounded-2xl border border-apple-red/25 bg-apple-red/[0.1] px-4 py-3 text-sm text-red-200">
+            <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {err}
             </p>
           )}
@@ -262,7 +262,7 @@ export default function CreateChallengePage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-apple-blue py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-apple-blue-hover"
+            className="w-full rounded-2xl bg-pacer-primary py-4 text-base font-bold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-pacer-primary-hover"
           >
             {loading ? "Creating…" : "Create & get invite link"}
           </button>

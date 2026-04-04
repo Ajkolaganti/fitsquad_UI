@@ -15,6 +15,10 @@ const STROKE = 16;
 const R = (SVG_SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * R;
 
+const GREEN = "#0d9f6e";
+const GREEN_SOFT = "rgba(13, 159, 110, 0.12)";
+const TRACK = "rgba(20, 34, 26, 0.08)";
+
 export function Timer({
   status,
   formattedTime,
@@ -29,11 +33,11 @@ export function Timer({
   const isDone = goalReached || status === "completed_today";
   const isActive = status === "at_gym" && !isDone;
 
-  const ringColor = isDone ? "#30D158" : isActive ? "#0A84FF" : "rgba(255,255,255,0.06)";
+  const ringColor = isDone ? GREEN : isActive ? "#0ea5e9" : TRACK;
   const ringGlow = isDone
-    ? "drop-shadow(0 0 10px rgba(48,209,88,0.7))"
+    ? "drop-shadow(0 0 10px rgba(13,159,110,0.45))"
     : isActive
-      ? "drop-shadow(0 0 10px rgba(10,132,255,0.7))"
+      ? "drop-shadow(0 0 10px rgba(14,165,233,0.4))"
       : "none";
 
   const statusLabel = {
@@ -42,26 +46,26 @@ export function Timer({
     completed_today: "DONE TODAY",
   }[status];
 
-  const statusDot = isDone ? "#30D158" : isActive ? "#0A84FF" : "#52525B";
+  const statusDot = isDone ? GREEN : isActive ? "#0ea5e9" : "#94a3a8";
   const message = isDone
     ? "Session complete — you crushed it 🔥"
     : isActive
       ? "Stay in zone — timer running ⚡"
       : "Head to your gym to start";
 
+  const centerColor = isDone ? GREEN : isActive ? "#14221a" : "#94a3a8";
+
   return (
-    <div className="relative overflow-hidden rounded-[26px] border border-white/[0.09] bg-white/[0.04] p-6 shadow-glass backdrop-blur-2xl">
-      {/* Ambient glow behind ring */}
+    <div className="relative overflow-hidden rounded-[26px] border border-pacer-border bg-white p-6 shadow-glass backdrop-blur-2xl">
       {isActive && (
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-apple-blue/15 blur-3xl" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-100/80 blur-3xl" />
       )}
       {isDone && (
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-apple-green/15 blur-3xl" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" style={{ backgroundColor: GREEN_SOFT }} />
       )}
 
       <div className="relative flex flex-col items-center">
-        {/* Status pill */}
-        <div className="mb-5 flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.06] px-3.5 py-1.5">
+        <div className="mb-5 flex items-center gap-2 rounded-full border border-pacer-border bg-pacer-mist px-3.5 py-1.5">
           <span
             className="h-2 w-2 rounded-full"
             style={{
@@ -70,12 +74,11 @@ export function Timer({
               animation: isActive ? "pulse 1.5s ease-in-out infinite" : "none",
             }}
           />
-          <span className="text-[10px] font-bold tracking-[0.18em] text-zinc-300">
+          <span className="text-[10px] font-bold tracking-[0.18em] text-pacer-muted">
             {statusLabel}
           </span>
         </div>
 
-        {/* SVG Ring */}
         <div className="relative">
           <svg
             width={SVG_SIZE}
@@ -83,22 +86,20 @@ export function Timer({
             className="-rotate-90"
             aria-hidden="true"
           >
-            {/* Track */}
             <circle
               cx={SVG_SIZE / 2}
               cy={SVG_SIZE / 2}
               r={R}
               fill="none"
-              stroke="rgba(255,255,255,0.05)"
+              stroke={TRACK}
               strokeWidth={STROKE}
             />
-            {/* Progress */}
             <circle
               cx={SVG_SIZE / 2}
               cy={SVG_SIZE / 2}
               r={R}
               fill="none"
-              stroke={ringColor}
+              stroke={ringColor === TRACK ? "#cbd5e1" : ringColor}
               strokeWidth={STROKE}
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
@@ -110,35 +111,28 @@ export function Timer({
             />
           </svg>
 
-          {/* Center */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
               className="font-display text-[3.25rem] font-bold tabular-nums tracking-tight leading-none"
-              style={{
-                color: isDone ? "#30D158" : isActive ? "#FFFFFF" : "#52525B",
-              }}
+              style={{ color: centerColor }}
             >
               {formattedTime}
             </span>
-            <span className="mt-2 text-xs font-medium text-zinc-600">
+            <span className="mt-2 text-xs font-medium text-pacer-muted">
               / {requiredMinutes} min goal
             </span>
             {isActive && pct > 0 && (
-              <span
-                className="mt-1.5 text-sm font-bold"
-                style={{ color: "#0A84FF" }}
-              >
+              <span className="mt-1.5 text-sm font-bold text-sky-600">
                 {Math.round(pct * 100)}%
               </span>
             )}
           </div>
         </div>
 
-        {/* Message */}
         <p
           className="mt-4 text-center text-sm font-medium"
           style={{
-            color: isDone ? "#30D158" : isActive ? "#409CFF" : "#71717A",
+            color: isDone ? GREEN : isActive ? "#0284c7" : "#64748b",
           }}
         >
           {message}

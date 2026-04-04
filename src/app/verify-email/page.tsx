@@ -50,21 +50,21 @@ function VerifyInner() {
       <AppLogo variant="header" className="mb-8 opacity-90" />
       {status === "loading" && (
         <>
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
-          <p className="mt-6 text-center text-sm text-zinc-400">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
+          <p className="mt-6 text-center text-sm text-pacer-muted">
             Verifying your email…
           </p>
         </>
       )}
       {status === "ok" && (
-        <p className="max-w-sm text-center text-sm text-zinc-200">{message}</p>
+        <p className="max-w-sm text-center text-sm text-pacer-ink">{message}</p>
       )}
       {status === "err" && (
         <div className="max-w-sm space-y-4 text-center">
-          <p className="text-sm text-red-200">{message}</p>
+          <p className="text-sm text-red-700">{message}</p>
           <Link
             href="/login"
-            className="inline-block text-sm font-medium text-apple-blue hover:underline"
+            className="inline-block text-sm font-medium text-pacer-primary hover:underline"
           >
             Back to sign in
           </Link>
@@ -79,7 +79,7 @@ export default function VerifyEmailPage() {
     <Suspense
       fallback={
         <div className="flex min-h-[40dvh] items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
         </div>
       }
     >
