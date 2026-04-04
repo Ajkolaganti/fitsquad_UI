@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogOut, Flame, Trophy, Plus, Sparkles } from "lucide-react";
-import { AppLogo } from "@/components/AppLogo";
 import { ChallengeCard } from "@/components/ChallengeCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { authSignOut } from "@/lib/auth-session";
@@ -78,9 +77,6 @@ export default function DashboardPage() {
 
   return (
     <div className="px-5 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
-      <div className="mb-6 flex justify-center">
-        <AppLogo variant="header" />
-      </div>
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-pacer-muted">{getGreeting()}</p>
