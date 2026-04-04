@@ -138,7 +138,7 @@ export function LandingPage() {
         </div>
 
         <p className="mt-10 text-center text-xs text-pacer-muted">
-          FirSquad — inspired by friendly fitness apps like{" "}
+          fitsquad — inspired by friendly fitness apps like{" "}
           <a
             href="https://www.mypacer.com/"
             className="font-medium text-pacer-leaf underline-offset-2 hover:underline"

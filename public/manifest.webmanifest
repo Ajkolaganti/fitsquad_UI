@@ -1,6 +1,6 @@
 {
-  "name": "FirSquad",
-  "short_name": "FirSquad",
+  "name": "fitsquad",
+  "short_name": "fitsquad",
   "description": "Gym accountability with your squad",
   "start_url": "/",
   "display": "standalone",

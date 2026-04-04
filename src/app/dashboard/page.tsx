@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogOut, Flame, Trophy, Plus, Sparkles } from "lucide-react";
@@ -8,8 +8,8 @@ import { ChallengeCard } from "@/components/ChallengeCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { authSignOut } from "@/lib/auth-session";
 import { apiGetChallenge, isApiConfigured } from "@/lib/api";
+import { buildSquadActivityItems } from "@/lib/squad-activity";
 import { useAppStore } from "@/store/useAppStore";
-import { MOCK_ACTIVITIES } from "@/lib/mock-data";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -49,7 +49,12 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [hydrated, user?.id, challengeCount]);
+  }, [hydrated, user, challengeCount]);
+
+  const squadActivityItems = useMemo(() => {
+    if (!user) return [];
+    return buildSquadActivityItems(challenges, user.id);
+  }, [challenges, user]);
 
   if (!hydrated || !user) {
     return (
@@ -178,7 +183,7 @@ export default function DashboardPage() {
       </section>
 
       <section>
-        <ActivityFeed items={MOCK_ACTIVITIES} />
+        <ActivityFeed items={squadActivityItems} />
       </section>
     </div>
   );

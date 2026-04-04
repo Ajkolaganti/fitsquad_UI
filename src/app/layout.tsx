@@ -20,7 +20,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export const metadata: Metadata = {
   ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
-  title: "FirSquad — Gym accountability & challenges",
+  title: "fitsquad — Gym accountability & challenges",
   description:
     "Your squad, your gym — track check-ins, challenges, and streaks together.",
   manifest: "/manifest.webmanifest",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "FirSquad",
+    title: "fitsquad",
   },
 };
 

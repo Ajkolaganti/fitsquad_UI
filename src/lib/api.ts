@@ -355,18 +355,36 @@ export async function apiSendChatImage(
   form.append("userId", opts.userId);
   form.append("image", opts.image, "image.jpg");
   if (opts.caption?.trim()) form.append("caption", opts.caption.trim());
-  const { data } = await api.post<{
-    success: boolean;
-    data: ApiChatMessage;
-  }>(`/chat/${challengeId}/send-image`, form, {
-    timeout: 120_000,
-    maxBodyLength: Infinity,
-    maxContentLength: Infinity,
-  });
-  if (!data.success || !data.data) {
-    throw new Error("Failed to send image");
+  /** Use `fetch` so we never set `Content-Type` — the browser adds the multipart boundary. */
+  const url = `${baseURL.replace(/\/$/, "")}/chat/${challengeId}/send-image`;
+  const headers: HeadersInit = {};
+  const auth = api.defaults.headers.common.Authorization;
+  if (auth) headers.Authorization = String(auth);
+  const res = await fetch(url, { method: "POST", body: form, headers });
+  const raw = (await res.json()) as {
+    success?: boolean;
+    data?: ApiChatMessage;
+    message?: string;
+  };
+  if (!res.ok || !raw.success || !raw.data) {
+    throw new Error(raw.message || "Failed to send image");
   }
-  return normalizeChatMessage(data.data);
+  return normalizeChatMessage(raw.data);
+}
+
+/**
+ * Load decrypted message from REST API by id (use after Realtime INSERT — never trust
+ * `payload.new.content`, which is encrypted at rest).
+ */
+export async function apiFetchChatMessageDecrypted(
+  challengeId: string,
+  messageId: string
+): Promise<ApiChatMessage | null> {
+  const first = await apiGetChatMessages(challengeId, { limit: 80 });
+  const hit = first.find((m) => m.id === messageId);
+  if (hit) return hit;
+  const wider = await apiGetChatMessages(challengeId, { limit: 500 });
+  return wider.find((m) => m.id === messageId) ?? null;
 }
 
 /** `POST /chat/:challengeId/send-url` */

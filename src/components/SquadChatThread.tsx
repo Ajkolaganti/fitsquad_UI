@@ -8,29 +8,23 @@ import {
 } from "react";
 import Link from "next/link";
 import { ArrowLeft, Paperclip, Send, Smile, X } from "lucide-react";
-import type { ApiChatMessage, ApiChatUrlContent } from "@/lib/api-types";
+import type { ApiChatMessage } from "@/lib/api-types";
 import {
+  apiFetchChatMessageDecrypted,
   apiGetChatMessages,
   apiSendChatImage,
   apiSendChatMessage,
+  apiSendChatUrl,
   getApiErrorMessage,
 } from "@/lib/api";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
-import { compressImageFile, parseChatContent } from "@/lib/chat-media";
+import { compressImageFile } from "@/lib/chat-media";
+import { SquadChatBubble } from "@/components/SquadChatBubble";
+import { markChatRead } from "@/lib/chatReadState";
 import { MOCK_ACTIVITIES } from "@/lib/mock-data";
 
 /** Backup refresh if Realtime is unavailable; live updates use Supabase + re-fetch. */
 const POLL_MS = 30_000;
-
-function urlPayloadFromContent(
-  content: ApiChatMessage["content"]
-): ApiChatUrlContent | null {
-  if (content && typeof content === "object" && "url" in content) {
-    const u = (content as ApiChatUrlContent).url;
-    if (typeof u === "string" && u.length > 0) return content as ApiChatUrlContent;
-  }
-  return null;
-}
 
 function formatBubbleTime(iso: string) {
   const d = new Date(iso);
@@ -50,6 +44,33 @@ function formatSystemTime(iso: string) {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+/** First line `https://…` + optional body → `POST …/send-url`; otherwise plain text send. */
+function parseUrlDraft(draft: string): { url: string; text?: string } | null {
+  const t = draft.trim();
+  if (!t) return null;
+  const lines = t.split(/\r?\n/);
+  if (lines.length === 1) {
+    try {
+      const u = new URL(t);
+      if (u.protocol === "http:" || u.protocol === "https:") return { url: t };
+    } catch {
+      return null;
+    }
+    return null;
+  }
+  const first = lines[0]!.trim();
+  try {
+    const u = new URL(first);
+    if (u.protocol === "http:" || u.protocol === "https:") {
+      const rest = lines.slice(1).join("\n").trim();
+      return { url: first, text: rest || undefined };
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 function mockMessagesForChallenge(challengeId: string): ApiChatMessage[] {
@@ -81,7 +102,7 @@ export interface SquadChatThreadProps {
 }
 
 /**
- * Full-height WhatsApp-inspired squad chat (FirSquad: brand greens + header label).
+ * Full-height WhatsApp-inspired squad chat (fitsquad: brand greens + header label).
  * Used only under /squads/[challengeId].
  */
 export function SquadChatThread({
@@ -130,7 +151,10 @@ export function SquadChatThread({
     return () => clearInterval(id);
   }, [apiMode, loadMessages]);
 
-  /** Realtime only signals new rows; `payload.new` is encrypted — always re-fetch via API. */
+  /**
+   * Realtime only signals new rows; `payload.new.content` is encrypted — fetch decrypted
+   * message by `payload.new.id` from the REST API (never render Realtime row fields).
+   */
   useEffect(() => {
     if (!apiMode || !hasSupabaseConfig()) return;
     const supabase = getSupabaseBrowserClient();
@@ -144,8 +168,33 @@ export function SquadChatThread({
           table: "messages",
           filter: `challengeId=eq.${challengeId}`,
         },
-        () => {
-          void loadMessages();
+        (payload: { new: Record<string, unknown> }) => {
+          const id = typeof payload.new?.id === "string" ? payload.new.id : null;
+          if (!id) {
+            void loadMessages();
+            return;
+          }
+          void (async () => {
+            try {
+              const msg = await apiFetchChatMessageDecrypted(challengeId, id);
+              if (msg) {
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === msg.id)) return prev;
+                  const next = [...prev, msg];
+                  next.sort(
+                    (a, b) =>
+                      new Date(a.createdAt).getTime() -
+                      new Date(b.createdAt).getTime()
+                  );
+                  return next;
+                });
+              } else {
+                void loadMessages();
+              }
+            } catch {
+              void loadMessages();
+            }
+          })();
         }
       )
       .subscribe();
@@ -169,6 +218,22 @@ export function SquadChatThread({
     el.scrollTop = el.scrollHeight;
   }, [messages, pendingImage, emojiOpen]);
 
+  /** Mark thread read for squads-list badges (latest message seen). */
+  useEffect(() => {
+    if (loading || messages.length === 0) return;
+    let latest = messages[0]!;
+    let latestT = new Date(latest.createdAt).getTime();
+    for (let i = 1; i < messages.length; i++) {
+      const m = messages[i]!;
+      const t = new Date(m.createdAt).getTime();
+      if (t >= latestT) {
+        latestT = t;
+        latest = m;
+      }
+    }
+    markChatRead(currentUserId, challengeId, latest.createdAt);
+  }, [loading, messages, currentUserId, challengeId]);
+
   useEffect(() => {
     if (!emojiOpen) return;
     function onDocClick(e: MouseEvent) {
@@ -191,6 +256,29 @@ export function SquadChatThread({
         await apiSendChatMessage(challengeId, {
           userId: currentUserId,
           content,
+        });
+        setDraft("");
+        setPendingImage(null);
+        await loadMessages();
+      } catch (e: unknown) {
+        setErr(getApiErrorMessage(e));
+      } finally {
+        setSending(false);
+      }
+    },
+    [apiMode, sending, challengeId, currentUserId, loadMessages]
+  );
+
+  const sendUrlPayload = useCallback(
+    async (url: string, text?: string) => {
+      if (!apiMode || sending) return;
+      setSending(true);
+      setErr(null);
+      try {
+        await apiSendChatUrl(challengeId, {
+          userId: currentUserId,
+          url,
+          text,
         });
         setDraft("");
         setPendingImage(null);
@@ -237,6 +325,11 @@ export function SquadChatThread({
       return;
     }
     if (!text) return;
+    const urlSend = parseUrlDraft(draft);
+    if (urlSend) {
+      await sendUrlPayload(urlSend.url, urlSend.text);
+      return;
+    }
     await sendPayload(text);
   }
 
@@ -260,7 +353,7 @@ export function SquadChatThread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-[#0b6e4f]">
-      {/* WhatsApp-style top bar — FirSquad tweak: mint accent strip */}
+      {/* WhatsApp-style top bar — fitsquad tweak: mint accent strip */}
       <header className="flex shrink-0 items-center gap-3 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white">
         <Link
           href="/squads"
@@ -278,7 +371,7 @@ export function SquadChatThread({
               {challengeName}
             </h1>
             <p className="truncate text-[12px] text-white/85">
-              FirSquad · squad chat
+              fitsquad · squad chat
             </p>
           </div>
         </div>
@@ -317,139 +410,15 @@ export function SquadChatThread({
               </p>
             </li>
           ) : (
-            messages.map((m) => {
-              const isSystem = m.type === "SYSTEM";
-              const isMine =
-                (m.type === "USER" ||
-                  m.type === "IMAGE" ||
-                  m.type === "URL") &&
-                m.userId === currentUserId;
-
-              if (isSystem) {
-                return (
-                  <li key={m.id} className="px-2 py-1 text-center">
-                    <span className="inline-block max-w-[92%] rounded-lg border border-black/5 bg-white/90 px-2 py-1 text-[11px] leading-snug text-pacer-muted shadow-sm">
-                      {typeof m.content === "string" ? m.content : ""}
-                    </span>
-                    <p className="mt-1 text-[10px] text-pacer-muted/80">
-                      {formatSystemTime(m.createdAt)}
-                    </p>
-                  </li>
-                );
-              }
-
-              const urlPayload =
-                m.type === "URL" ? urlPayloadFromContent(m.content) : null;
-              const imageCaption =
-                m.type === "IMAGE" && typeof m.content === "string"
-                  ? m.content.trim()
-                  : "";
-              const userParsed =
-                m.type === "USER"
-                  ? parseChatContent(
-                      typeof m.content === "string" ? m.content : ""
-                    )
-                  : null;
-
-              return (
-                <li
-                  key={m.id}
-                  className={`flex px-1 ${isMine ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[85%] sm:max-w-[75%] ${
-                      isMine ? "items-end" : "items-start"
-                    } flex flex-col gap-0.5`}
-                  >
-                    {!isMine && m.user && (
-                      <span className="max-w-full truncate pl-1 text-[12px] font-medium text-pacer-primary">
-                        {m.user.name}
-                      </span>
-                    )}
-                    <div
-                      className={`relative min-w-[4rem] rounded-lg px-2 pb-1.5 pt-1.5 shadow-sm ${
-                        isMine
-                          ? "rounded-tr-none bg-[#dcf8c6] text-pacer-ink"
-                          : "rounded-tl-none border border-black/6 bg-white text-pacer-ink"
-                      }`}
-                    >
-                      {m.type === "IMAGE" ? (
-                        m.mediaUrl ? (
-                          <div className="space-y-1">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={m.mediaUrl}
-                              alt={imageCaption || "Shared image"}
-                              className="max-h-48 w-full max-w-[240px] rounded-md object-cover sm:max-w-[280px]"
-                              loading="lazy"
-                            />
-                            {imageCaption ? (
-                              <p className="whitespace-pre-wrap break-words text-[14px] leading-snug">
-                                {imageCaption}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <p className="whitespace-pre-wrap break-words text-[14px] leading-snug text-pacer-muted">
-                            {imageCaption || "Photo unavailable"}
-                          </p>
-                        )
-                      ) : m.type === "URL" ? (
-                        urlPayload ? (
-                          <div className="space-y-1">
-                            <a
-                              href={urlPayload.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="break-words text-[14px] font-medium leading-snug text-[#0b6e4f] underline decoration-[#0b6e4f]/40 underline-offset-2 hover:decoration-[#0b6e4f]"
-                            >
-                              {urlPayload.url}
-                            </a>
-                            {urlPayload.text ? (
-                              <p className="whitespace-pre-wrap break-words text-[13px] leading-snug text-pacer-ink/90">
-                                {urlPayload.text}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <p className="whitespace-pre-wrap break-words text-[14px] leading-snug text-pacer-muted">
-                            Invalid link
-                          </p>
-                        )
-                      ) : userParsed?.kind === "image" ? (
-                        <div className="space-y-1">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={userParsed.dataUrl}
-                            alt=""
-                            className="max-h-48 w-full max-w-[240px] rounded-md object-cover sm:max-w-[280px]"
-                            loading="lazy"
-                          />
-                          {userParsed.caption && (
-                            <p className="whitespace-pre-wrap break-words text-[14px] leading-snug">
-                              {userParsed.caption}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="whitespace-pre-wrap break-words text-[14px] leading-snug">
-                          {userParsed?.text ?? ""}
-                        </p>
-                      )}
-                      <div
-                        className={`mt-0.5 flex justify-end gap-1 text-right ${
-                          isMine ? "text-pacer-ink/55" : "text-pacer-muted"
-                        }`}
-                      >
-                        <span className="text-[10px] tabular-nums">
-                          {formatBubbleTime(m.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              );
-            })
+            messages.map((m) => (
+              <SquadChatBubble
+                key={m.id}
+                message={m}
+                currentUserId={currentUserId}
+                formatBubbleTime={formatBubbleTime}
+                formatSystemTime={formatSystemTime}
+              />
+            ))
           )}
         </ul>
 

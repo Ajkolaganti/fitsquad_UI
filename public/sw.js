@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
 self.addEventListener("push", (event) => {
-  let title = "FirSquad";
+  let title = "fitsquad";
   let body = "";
   let data = {};
 
