@@ -24,14 +24,27 @@ import type {
  * `next.config.mjs`). That avoids browser CORS because the browser only talks to
  * this app’s origin.
  *
- * Override: set `NEXT_PUBLIC_API_URL` to a full `http(s)://` URL to call the API
- * directly (then your API must send CORS headers for this site).
+ * Override: set `NEXT_PUBLIC_API_URL` to the API **origin** only (e.g.
+ * `http://localhost:4000`), not a full path like `.../auth/register`, or requests
+ * will target the wrong URL.
+ *
+ * Direct `http(s)://` calls require CORS on the API.
  */
 function getApiBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (fromEnv) {
     if (fromEnv.startsWith("http://") || fromEnv.startsWith("https://")) {
-      return fromEnv;
+      let base = fromEnv.replace(/\/$/, "");
+      // Common mistake: pasting POST /auth/register URL as the "API base"
+      if (/\/auth\/register\/?$/i.test(base)) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "[FitSquad] NEXT_PUBLIC_API_URL should be the API root (e.g. http://localhost:4000), not /auth/register. Stripping path."
+          );
+        }
+        base = base.replace(/\/auth\/register\/?$/i, "");
+      }
+      return base;
     }
     return fromEnv;
   }
@@ -73,17 +86,22 @@ export async function apiAuthTelegram(
   return mapApiUserToUser(data.user);
 }
 
-/** Create account — sends verification email from backend (Resend). */
+/** Create account — sends verification email from backend (Resend). Always POST. */
 export async function apiRegister(body: {
   name: string;
   email: string;
   password: string;
 }): Promise<{ message: string; userId: string }> {
-  const { data } = await api.post<{
+  const { data } = await api.request<{
     success: boolean;
     message: string;
     userId: string;
-  }>("/auth/register", body);
+  }>({
+    url: "/auth/register",
+    method: "POST",
+    data: body,
+    headers: { "Content-Type": "application/json" },
+  });
   if (!data.success || !data.userId) {
     throw new Error(data.message || "Registration failed");
   }

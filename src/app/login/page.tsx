@@ -224,6 +224,7 @@ export default function LoginPage() {
 
         {apiMode ? (
           <form
+            method="post"
             onSubmit={(e) => void onApiSubmit(e)}
             className="space-y-4"
           >
@@ -358,6 +359,7 @@ export default function LoginPage() {
           </form>
         ) : supabaseMode ? (
           <form
+            method="post"
             onSubmit={(e) => void onSupabaseSubmit(e)}
             className="space-y-4"
           >
