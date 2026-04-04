@@ -4,7 +4,9 @@ import {
   mapApiChallengeToChallenge,
   mapApiUserToUser,
   mapLeaderboardRows,
+  mapLoginResponseUser,
 } from "@/lib/api-mappers";
+import { persistBackendTokens } from "@/lib/auth-tokens";
 import type {
   ApiChallenge,
   ApiChatMessage,
@@ -71,20 +73,70 @@ export async function apiAuthTelegram(
   return mapApiUserToUser(data.user);
 }
 
-/** Legacy login — `telegramId` + profile (optional if you still support this server-side). */
-export async function apiLogin(body: {
-  telegramId: string;
+/** Create account — sends verification email from backend (Resend). */
+export async function apiRegister(body: {
   name: string;
-  phone?: string;
+  email: string;
+  password: string;
+}): Promise<{ message: string; userId: string }> {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    userId: string;
+  }>("/auth/register", body);
+  if (!data.success || !data.userId) {
+    throw new Error(data.message || "Registration failed");
+  }
+  return { message: data.message, userId: data.userId };
+}
+
+/** Email + password — returns Supabase JWT for `Authorization: Bearer`. */
+export async function apiLogin(body: {
+  email: string;
+  password: string;
 }): Promise<User> {
-  const { data } = await api.post<{ success: boolean; user: ApiUser }>(
-    "/auth/login",
-    body
-  );
-  if (!data.success || !data.user) {
+  const { data } = await api.post<{
+    success: boolean;
+    token: string;
+    refreshToken: string;
+    user: { id: string; name: string; email: string };
+  }>("/auth/login", body);
+  if (!data.success || !data.token || !data.user) {
     throw new Error("Invalid login response");
   }
-  return mapApiUserToUser(data.user);
+  persistBackendTokens(data.token, data.refreshToken);
+  setAuthToken(data.token);
+  try {
+    return await apiGetCurrentUser();
+  } catch {
+    return mapLoginResponseUser(data.user);
+  }
+}
+
+export async function apiVerifyEmail(body: {
+  token: string;
+}): Promise<{ message: string }> {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+  }>("/auth/verify-email", body);
+  if (!data.success) {
+    throw new Error(data.message || "Verification failed");
+  }
+  return { message: data.message };
+}
+
+export async function apiResendVerification(body: {
+  email: string;
+}): Promise<{ message: string }> {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+  }>("/auth/resend-verification", body);
+  if (!data.success) {
+    throw new Error(data.message || "Could not resend email");
+  }
+  return { message: data.message };
 }
 
 /** Current profile — requires `Authorization: Bearer` (Supabase access token). */

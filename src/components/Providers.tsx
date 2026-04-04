@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { setAuthToken } from "@/lib/api";
+import {
+  apiGetCurrentUser,
+  isApiConfigured,
+  setAuthToken,
+} from "@/lib/api";
 import { syncSessionToApp } from "@/lib/auth-session";
+import {
+  clearBackendTokens,
+  getStoredBackendAccessToken,
+} from "@/lib/auth-tokens";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
 import { hydrateUserFromStorage, useAppStore } from "@/store/useAppStore";
 
@@ -24,9 +32,26 @@ export function Providers({ children }: { children: React.ReactNode }) {
             return;
           }
         } catch {
-          /* fall through to local storage */
+          /* fall through */
         }
       }
+
+      const token = getStoredBackendAccessToken();
+      if (token && isApiConfigured()) {
+        setAuthToken(token);
+        try {
+          const u = await apiGetCurrentUser();
+          if (cancelled) return;
+          useAppStore.getState().setUser(u);
+          useAppStore.getState().setHydrated(true);
+          return;
+        } catch {
+          clearBackendTokens();
+          setAuthToken(null);
+          useAppStore.getState().logout();
+        }
+      }
+
       hydrateUserFromStorage();
     }
 

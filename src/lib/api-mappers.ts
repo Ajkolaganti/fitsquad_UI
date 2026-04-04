@@ -10,11 +10,28 @@ export function mapApiUserToUser(u: ApiUser): User {
   return {
     id: u.id,
     name: u.name,
-    telegramId: u.telegramId,
+    telegramId: typeof u.telegramId === "string" ? u.telegramId : "",
     email: u.email ?? undefined,
     phone: u.phone ?? undefined,
-    gymLat: u.gymLat,
-    gymLng: u.gymLng,
+    gymLat: u.gymLat ?? null,
+    gymLng: u.gymLng ?? null,
+  };
+}
+
+/** `/auth/login` user payload (no gym coords / telegram). */
+export function mapLoginResponseUser(u: {
+  id: string;
+  name: string;
+  email: string;
+}): User {
+  return {
+    id: u.id,
+    name: u.name,
+    telegramId: "",
+    email: u.email,
+    phone: null,
+    gymLat: null,
+    gymLng: null,
   };
 }
 

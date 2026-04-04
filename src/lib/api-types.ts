@@ -14,11 +14,12 @@ export interface TelegramWidgetPayload {
 export interface ApiUser {
   id: string;
   name: string;
-  telegramId: string;
+  /** Omitted on email-only `/auth/login` profile until `/auth/me` loads. */
+  telegramId?: string;
   email?: string | null;
   phone?: string | null;
-  gymLat: number | null;
-  gymLng: number | null;
+  gymLat?: number | null;
+  gymLng?: number | null;
   createdAt?: string;
   updatedAt?: string;
 }

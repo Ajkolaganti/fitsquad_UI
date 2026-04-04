@@ -6,7 +6,13 @@ import { AppLogo } from "@/components/AppLogo";
 import { syncSessionToApp } from "@/lib/auth-session";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
-import { isApiConfigured } from "@/lib/api";
+import {
+  apiLogin,
+  apiRegister,
+  apiResendVerification,
+  getApiErrorMessage,
+  isApiConfigured,
+} from "@/lib/api";
 import type { User } from "@/types";
 
 function mockLogin(name: string): User {
@@ -47,6 +53,62 @@ export default function LoginPage() {
   const apiMode = isApiConfigured();
   const supabaseMode = hasSupabaseConfig();
 
+  async function onApiSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setInfo(null);
+    const em = email.trim();
+    const pw = password;
+    if (!em || !pw) {
+      setErr("Email and password are required.");
+      return;
+    }
+    if (mode === "signup" && !displayName.trim()) {
+      setErr("Name, email, and password are required.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (mode === "signup") {
+        const { message } = await apiRegister({
+          name: displayName.trim(),
+          email: em,
+          password: pw,
+        });
+        setInfo(message);
+        setPassword("");
+        return;
+      }
+      const user = await apiLogin({ email: em, password: pw });
+      setUser(user);
+      router.replace("/dashboard");
+    } catch (e: unknown) {
+      setErr(getApiErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onResendVerification() {
+    const em = email.trim();
+    if (!em) {
+      setErr("Enter your email address above first.");
+      return;
+    }
+    setErr(null);
+    setInfo(null);
+    setLoading(true);
+    try {
+      const { message } = await apiResendVerification({ email: em });
+      setInfo(message);
+    } catch (e: unknown) {
+      setErr(getApiErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function onSupabaseSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
@@ -58,7 +120,7 @@ export default function LoginPage() {
       return;
     }
     if (mode === "signup" && !displayName.trim()) {
-      setErr("Add a display name for your profile.");
+      setErr("Add your name for your profile.");
       return;
     }
 
@@ -160,7 +222,141 @@ export default function LoginPage() {
           </p>
         )}
 
-        {supabaseMode ? (
+        {apiMode ? (
+          <form
+            onSubmit={(e) => void onApiSubmit(e)}
+            className="space-y-4"
+          >
+            <div className="flex rounded-2xl border border-white/[0.08] p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("signin");
+                  setErr(null);
+                  setInfo(null);
+                }}
+                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+                  mode === "signin"
+                    ? "bg-white/[0.12] text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("signup");
+                  setErr(null);
+                  setInfo(null);
+                }}
+                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+                  mode === "signup"
+                    ? "bg-white/[0.12] text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                Create account
+              </button>
+            </div>
+
+            {mode === "signup" && (
+              <div>
+                <label
+                  htmlFor="displayName"
+                  className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                >
+                  Name
+                </label>
+                <input
+                  id="displayName"
+                  type="text"
+                  autoComplete="name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="e.g. Alex"
+                  className={inputClass}
+                />
+              </div>
+            )}
+
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete={
+                  mode === "signup" ? "new-password" : "current-password"
+                }
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className={inputClass}
+              />
+            </div>
+
+            {info && (
+              <p className="rounded-2xl border border-apple-blue/25 bg-apple-blue/10 px-4 py-3 text-center text-sm text-zinc-200">
+                {info}
+              </p>
+            )}
+            {err && (
+              <p className="rounded-2xl border border-apple-red/30 bg-apple-red/10 px-4 py-3 text-center text-sm text-red-200">
+                {err}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-2xl bg-apple-blue py-4 text-base font-semibold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-50 hover:bg-apple-blue-hover"
+            >
+              {loading
+                ? "Please wait…"
+                : mode === "signup"
+                  ? "Create account"
+                  : "Sign in"}
+            </button>
+
+            {mode === "signin" && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void onResendVerification()}
+                className="w-full text-center text-sm text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
+              >
+                Resend verification email
+              </button>
+            )}
+
+            <p className="text-center text-[11px] leading-relaxed text-zinc-600">
+              Registration sends a verification link from FitSquad (24 h). After
+              you verify, sign in here. Links open{" "}
+              <code className="text-zinc-500">/verify-email?token=…</code>.
+            </p>
+          </form>
+        ) : supabaseMode ? (
           <form
             onSubmit={(e) => void onSupabaseSubmit(e)}
             className="space-y-4"
@@ -282,21 +478,6 @@ export default function LoginPage() {
               via Resend). Configure Auth → SMTP in the Supabase dashboard.
             </p>
           </form>
-        ) : apiMode ? (
-          <div className="space-y-4 rounded-2xl border border-apple-orange/20 bg-apple-orange/5 px-4 py-4 text-sm text-zinc-300">
-            <p className="font-medium text-white">Supabase environment missing</p>
-            <p>
-              Add{" "}
-              <code className="rounded bg-black/30 px-1 py-0.5 text-xs">
-                NEXT_PUBLIC_SUPABASE_URL
-              </code>{" "}
-              and{" "}
-              <code className="rounded bg-black/30 px-1 py-0.5 text-xs">
-                NEXT_PUBLIC_SUPABASE_ANON_KEY
-              </code>{" "}
-              to enable email and password sign-in.
-            </p>
-          </div>
         ) : (
           <form onSubmit={onDemoSubmit} className="space-y-4">
             <p className="text-center text-sm text-zinc-500">
@@ -334,7 +515,15 @@ export default function LoginPage() {
           </form>
         )}
 
-        {supabaseMode && (
+        {apiMode && (
+          <p className="mt-10 text-center text-xs text-zinc-600">
+            API calls use the JWT from <code className="text-zinc-500">POST /auth/login</code>{" "}
+            (<code className="text-zinc-500">Authorization: Bearer</code>).{" "}
+            <code className="text-zinc-500">GET /auth/me</code> should validate the token
+            and return your profile.
+          </p>
+        )}
+        {!apiMode && supabaseMode && (
           <p className="mt-10 text-center text-xs text-zinc-600">
             API requests send your Supabase session token. Ensure{" "}
             <code className="text-zinc-500">GET /auth/me</code> validates the JWT

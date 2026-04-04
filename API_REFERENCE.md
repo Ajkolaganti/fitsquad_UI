@@ -12,7 +12,7 @@
 3. [Location](#3-location)
 4. [Check-in](#4-check-in)
 5. [Leaderboard](#5-leaderboard)
-6. [Chat (in-app group)](#6-chat-in-app-group)
+6. [Chat (Realtime)](#6-chat-realtime)
 7. [Error Format](#7-error-format)
 8. [Check-in State Machine](#8-check-in-state-machine)
 9. [Telegram Bot Events](#9-telegram-bot-events)
@@ -21,76 +21,227 @@
 
 ## 1. Auth
 
-### Web app: Supabase email + password
+Authentication uses **email + password**. FitSquad owns the entire email flow — Supabase Auth is used only as a credential store and JWT issuer. All verification and password-reset emails are sent by **our backend** via Resend SMTP with custom HTML templates.
 
-The **Next.js frontend** uses [Supabase Auth](https://supabase.com/docs/guides/auth) (`signUp` / `signInWithPassword`). Configure **email confirmation** in Supabase; transactional mail (verification links) is typically sent via **SMTP** — e.g. [Resend with Supabase](https://supabase.com/docs/guides/auth/auth-smtp) or another provider under **Supabase → Project Settings → Authentication → SMTP**.
+**Email flow overview:**
 
-**Redirect URL for email links:** add your app origin and `/auth/callback` to **Supabase → Authentication → URL Configuration** (e.g. `https://fitsquad.fit/auth/callback`).
-
-After the user signs in, the browser holds a Supabase session. **All API requests from the app include:**
-
-```http
-Authorization: Bearer <supabase_access_token>
-```
-
-The backend must **verify the JWT** (Supabase JWKS / `SUPABASE_JWT_SECRET`) and resolve the internal app user.
+| Event | Email sent | Template |
+|-------|-----------|----------|
+| Register | Verification email (24 h link) | `verifyEmail` |
+| Verify email | Welcome email | `welcomeEmail` |
+| Forgot password | Reset link (1 h) | `forgotPassword` |
+| Workout completed | Workout stats notification | `workoutComplete` |
+| Missed workout (cron) | Missed workout warning | `missedWorkout` |
+| Joined challenge | Invite code card | `joinedChallenge` |
 
 ---
 
-### GET `/auth/me` ⭐
+### POST `/auth/register`
 
-Returns the logged-in user. Requires a valid `Authorization: Bearer` Supabase access token.
+Create a new account. The backend:
+1. Creates the Supabase Auth user with `email_confirm: true` (so Supabase sends **no** email).
+2. Saves the user row in the `users` table (same UUID as Supabase Auth).
+3. Generates a 64-byte random verification token (24 h expiry), stores it in the DB.
+4. Sends a beautiful HTML verification email via Resend SMTP.
+
+**Request body**
+
+```json
+{
+  "name": "Ajay Singh",
+  "email": "ajay@example.com",
+  "password": "supersecret123"
+}
+```
+
+**Response `201 Created`**
+
+```json
+{
+  "success": true,
+  "message": "Registration successful. Check your email to verify your account.",
+  "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+**Errors**
+
+| Status | Message | Cause |
+|--------|---------|-------|
+| `400`  | name, email and password are required | Missing field |
+| `409`  | Email already registered | Duplicate account |
+
+---
+
+### POST `/auth/login`
+
+Sign in with email and password. Returns a Supabase JWT you can use as `Authorization: Bearer <token>`.  
+**Login is blocked** until the user clicks the verification link in their email.
+
+**Request body**
+
+```json
+{
+  "email": "ajay@example.com",
+  "password": "supersecret123"
+}
+```
 
 **Response `200 OK`**
 
 ```json
 {
   "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "v1.xxxxx...",
   "user": {
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Ajay Singh",
-    "telegramId": "",
-    "email": "ajay@example.com",
-    "phone": null,
-    "gymLat": null,
-    "gymLng": null,
-    "createdAt": "2026-04-04T10:00:00.000Z",
-    "updatedAt": "2026-04-04T10:00:00.000Z"
+    "email": "ajay@example.com"
   }
 }
 ```
 
-| Status | Meaning |
-|--------|---------|
-| `401` | Missing, invalid, or expired token |
+**Errors**
 
-If the frontend cannot call `/auth/me` (e.g. not deployed yet), it can fall back to mapping the Supabase Auth user until the endpoint exists.
+| Status | Message | Cause |
+|--------|---------|-------|
+| `400`  | email and password are required | Missing field |
+| `401`  | Invalid email or password | Wrong credentials |
+| `403`  | Email not verified. Please check your inbox… | `emailVerifiedAt` is null |
 
 ---
 
-### POST `/auth/login` (legacy / internal)
+### POST `/auth/verify-email`
 
-Direct login without Supabase — optional for bots or tools.
+Called by the frontend after the user clicks the link in the verification email.  
+The frontend extracts `?token=` from the URL and POSTs it here.
+
+**Request body**
+
+```json
+{ "token": "a3f9e2c1..." }
+```
+
+**Response `200 OK`**
+
+```json
+{
+  "success": true,
+  "message": "Email verified! Welcome to FitSquad."
+}
+```
+
+**Errors**
+
+| Status | Message | Cause |
+|--------|---------|-------|
+| `400`  | Invalid or already-used verification token | Token not found |
+| `410`  | Verification link has expired | Token past 24 h |
+
+> After verification a **Welcome email** is automatically sent to the user.
+
+---
+
+### POST `/auth/resend-verification`
+
+Regenerates and resends the verification email if the link expired or was lost.
+
+**Request body**
+
+```json
+{ "email": "ajay@example.com" }
+```
+
+**Response `200 OK`**
+
+```json
+{
+  "success": true,
+  "message": "Verification email resent. Check your inbox."
+}
+```
+
+**Errors**
+
+| Status | Message | Cause |
+|--------|---------|-------|
+| `404`  | No account found with that email | Unknown email |
+| `409`  | This email is already verified | Already done |
+
+---
+
+### POST `/auth/forgot-password`
+
+Sends a password-reset email with a 1-hour token link.  
+Always returns the same message to prevent user enumeration.
+
+**Request body**
+
+```json
+{ "email": "ajay@example.com" }
+```
+
+**Response `200 OK`**
+
+```json
+{
+  "success": true,
+  "message": "If an account exists for that email, a reset link has been sent."
+}
+```
+
+---
+
+### POST `/auth/reset-password`
+
+Validates the reset token and updates the password in Supabase Auth.  
+The frontend extracts `?token=` from the reset URL and POSTs it here along with the new password.
 
 **Request body**
 
 ```json
 {
-  "telegramId": "123456789",
-  "name": "Ajay Singh",
-  "phone": "+91 98765 43210"
+  "token": "b7d2f143...",
+  "newPassword": "mynewpassword99"
 }
 ```
 
-**Response `200 OK`** — same `user` shape as `/auth/me`.
+**Response `200 OK`**
+
+```json
+{
+  "success": true,
+  "message": "Password updated successfully. You can now log in."
+}
+```
+
+**Errors**
+
+| Status | Message | Cause |
+|--------|---------|-------|
+| `400`  | token and newPassword are required | Missing field |
+| `400`  | Password must be at least 8 characters | Too short |
+| `400`  | Invalid or already-used reset token | Token not found |
+| `410`  | Reset link has expired | Token past 1 h |
 
 ---
 
-### POST `/auth/telegram` (legacy)
+### Email setup (one-time)
 
-Telegram Login Widget payload — optional if you still support it server-side.
+Add to `.env`:
+```
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
+MAIL_FROM_ONBOARDING=FitSquad <onboarding@fitsquad.fit>
+MAIL_FROM_NOTIFICATIONS=FitSquad <notifications@fitsquad.fit>
+MAIL_FROM_SUPPORT=FitSquad <support@fitsquad.fit>
+FRONTEND_URL=http://localhost:3000
+```
+
+> Verify `fitsquad.fit` (or your domain) at [resend.com/domains](https://resend.com/domains) so the `@fitsquad.fit` senders work. In dev you can temporarily use `onboarding@resend.dev` (delivers only to your Resend-verified email).
 
 ---
+
 
 ## 2. Challenge
 
@@ -425,10 +576,10 @@ Returns participants ranked by `completedDays` (desc), with `streak` as a tiebre
 
 ---
 
-## 6. Chat (in-app group)
+## 6. Chat (Realtime)
 
-In-app group chat per challenge. The frontend talks to your API **only** — use `GET /chat/:challengeId/messages` and `POST /chat/:challengeId/send`.  
-There is **no third-party realtime SDK** on the client: poll message history on an interval (e.g. every 5–10 seconds) while the chat view is open, and optionally refetch when the window regains focus.
+In-app group chat per challenge, powered by **Supabase Realtime**.  
+Every insert into the `messages` table is broadcast instantly to all subscribed frontend clients — no websocket server needed on your backend.
 
 Messages have two types:
 - **`USER`** — sent by a real participant
@@ -527,9 +678,104 @@ GET /chat/c1d2e3f4-.../messages?limit=50&before=2026-04-04T09:15:00.000Z
 
 ---
 
-### Frontend: polling (no third-party SDK)
+### Frontend: Supabase Realtime subscription
 
-While the chat screen is visible, call `GET /chat/:challengeId/messages` on a timer (e.g. every 5–10 s) to pick up new messages. Clear the interval on unmount. Optionally refetch when `document.visibilityState` becomes `"visible"` so returning to the tab refreshes the thread.
+The JS client uses the **Postgres Changes** API (`postgres_changes`), which streams WAL events over a websocket.
+
+**One-time SQL setup (run in Supabase SQL Editor):**
+
+```sql
+-- 1. Add the messages table to the Supabase Realtime publication so
+--    WAL changes are streamed to connected clients.
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+
+-- 2. If Row Level Security is enabled on your project, add a read policy
+--    so the anon/authenticated role can receive the streamed rows.
+--    (Skip if RLS is OFF on the messages table.)
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "challenge participants can read messages"
+ON messages FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM participants
+    WHERE participants."challengeId" = messages."challengeId"
+  )
+);
+```
+
+> **Note:** The backend inserts messages using the `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS).  
+> The frontend subscribes using the public `SUPABASE_ANON_KEY`, so the SELECT policy above  
+> controls what change events are forwarded to subscribers.
+
+Install the Supabase JS client in your frontend:
+
+```bash
+npm install @supabase/supabase-js
+```
+
+Subscribe to new messages for a specific challenge (add this when the chat screen mounts):
+
+```js
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://bjinxlathsbgwydncaob.supabase.co',
+  'YOUR_ANON_PUBLIC_KEY'  // safe to expose — RLS is enforced server-side
+);
+
+function subscribeToChallengeChat(challengeId, onMessage) {
+  const channel = supabase
+    .channel(`chat:${challengeId}`)
+    .on(
+      'postgres_changes',        // Postgres Changes (WAL → websocket)
+      {
+        event:  'INSERT',
+        schema: 'public',
+        table:  'messages',
+        filter: `challengeId=eq.${challengeId}`,
+      },
+      (payload) => onMessage(payload.new)
+    )
+    .subscribe();
+
+  // Call the returned cleanup function when the screen unmounts
+  return () => supabase.removeChannel(channel);
+}
+
+// ── React example ──────────────────────────────────────────────────────────
+import { useEffect, useState } from 'react';
+
+function ChatScreen({ challengeId }) {
+  const [messages, setMessages] = useState([]);
+
+  // Load history on mount
+  useEffect(() => {
+    fetch(`/chat/${challengeId}/messages`)
+      .then(r => r.json())
+      .then(({ data }) => setMessages(data));
+  }, [challengeId]);
+
+  // Subscribe to live updates
+  useEffect(() => {
+    const unsubscribe = subscribeToChallengeChat(challengeId, (newMsg) => {
+      setMessages(prev => [...prev, newMsg]);
+    });
+    return unsubscribe;
+  }, [challengeId]);
+
+  return (
+    <div>
+      {messages.map(m => (
+        <div key={m.id} className={m.type === 'SYSTEM' ? 'system-msg' : 'user-msg'}>
+          {m.type === 'USER' && <strong>{m.user?.name}: </strong>}
+          {m.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
 
 ---
 
@@ -619,20 +865,31 @@ To enable bot messages, pass `telegramGroupId` (the group's chat ID, e.g. `-1001
 ## Quick-Start Flow (frontend integration order)
 
 ```
-1. Supabase Auth (email + password) → verification email (SMTP e.g. Resend) → session
-   GET /auth/me                      → Bearer token → userId for other calls
+1. POST /auth/register           → creates account; user gets a verification email
 
-2. POST /location/update         → save gym GPS (once, or when user changes gym)
+2. POST /auth/verify-email       → { token } from ?token= in the email link
+   (backend sets emailVerifiedAt; sends welcome email)
 
-3. POST /challenge/create        → get inviteCode  (challenge creator)
+3. POST /auth/login              → returns JWT token + userId + refreshToken
+
+4. POST /location/update         → save gym GPS (once, or when user changes gym)
+
+5. POST /challenge/create        → get inviteCode  (challenge creator)
    POST /challenge/join          → join with inviteCode (members)
+   (backend sends joinedChallenge email automatically)
 
-4. Poll POST /checkin            → every 5 min while user is active
+6. Poll POST /checkin            → every 5 min while user is active
+   (backend sends workoutComplete email when session closes)
 
-5. GET  /leaderboard/:id         → show rankings on leaderboard screen
-6. GET  /challenge/:id           → show challenge details + participant list
+7. GET  /leaderboard/:id         → show rankings on leaderboard screen
+8. GET  /challenge/:id           → show challenge details + participant list
 
-7. GET  /chat/:id/messages       → load message history when chat screen opens
+9. GET  /chat/:id/messages       → load message history when chat screen opens
    POST /chat/:id/send           → send a message
-   Poll GET /chat/:id/messages   → while chat is open (no third-party realtime client)
+   supabase.channel()            → subscribe for live messages (Realtime)
+
+── Password reset flow ──────────────────────────────────────────────────────────
+POST /auth/forgot-password       → { email }  → sends reset email
+(user clicks link in email)      → frontend shows new-password form
+POST /auth/reset-password        → { token, newPassword }  → updates password
 ```

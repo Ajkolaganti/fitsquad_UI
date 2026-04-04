@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Challenge, User } from "@/types";
 import { setAuthToken } from "@/lib/api";
+import { clearBackendTokens } from "@/lib/auth-tokens";
 
 interface AppState {
   user: User | null;
@@ -22,7 +23,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   setHydrated: (v) => set({ hydrated: v }),
 
   setUser: (user) => {
-    if (!user) setAuthToken(null);
+    if (!user) {
+      setAuthToken(null);
+      clearBackendTokens();
+    }
     set({ user });
     if (typeof window !== "undefined") {
       if (user) {
@@ -35,6 +39,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   logout: () => {
     setAuthToken(null);
+    clearBackendTokens();
     set({ user: null });
     if (typeof window !== "undefined") {
       localStorage.removeItem("firsquad_user");

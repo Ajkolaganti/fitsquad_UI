@@ -45,6 +45,5 @@ export async function authSignOut(): Promise<void> {
       /* still clear local session */
     }
   }
-  setAuthToken(null);
   useAppStore.getState().logout();
 }
