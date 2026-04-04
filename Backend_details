@@ -1,0 +1,108 @@
+You are a senior backend engineer. Build a backend + Telegram bot for a "Gym Accountability App".
+
+### Tech Stack:
+- Node.js with Express
+- PostgreSQL (or Supabase)
+- Prisma ORM
+- Telegram Bot API (node-telegram-bot-api)
+
+### Core Features:
+
+1. User System:
+   - Create user with Telegram ID
+   - Store username, phone (optional)
+
+2. Challenge System:
+   - Create challenge
+   - Join challenge via invite link
+   - Store participants
+
+3. Gym Location:
+   - Each user can save a gym location (lat, lng)
+
+4. Check-in Logic:
+   - API receives user GPS coordinates
+   - Check if within 100 meters of gym (use Haversine formula)
+   - If user stays >= 40 mins → mark session complete
+
+5. Telegram Bot Integration:
+   - When user joins challenge → send welcome message
+   - When user enters gym:
+     - Send message to group:
+       "Ajay just entered the gym 💪"
+   - When session completed:
+     - "Ajay completed today's workout 🔥"
+   - When user misses:
+     - "John skipped today 😴"
+
+6. Scheduler (CRON):
+   - Run daily check for missed workouts
+   - Reset daily status
+
+7. Leaderboard API:
+   - Return ranked users based on completed days
+
+---
+
+### API Endpoints:
+- POST /auth/login
+- POST /challenge/create
+- POST /challenge/join
+- GET /challenge/:id
+- POST /location/update
+- POST /checkin
+- GET /leaderboard/:challengeId
+
+---
+
+### Database Models:
+User:
+- id
+- name
+- telegramId
+- gymLat
+- gymLng
+
+Challenge:
+- id
+- name
+- daysPerWeek
+- durationMinutes
+
+Participant:
+- userId
+- challengeId
+- streak
+- completedDays
+
+Checkin:
+- userId
+- challengeId
+- startTime
+- endTime
+- status
+
+---
+
+### Telegram Bot:
+- Initialize bot with token
+- Listen for /start
+- Map Telegram user to app user
+- Send messages to group chat
+
+---
+
+### Important:
+- Use Haversine formula for distance calculation
+- Prevent duplicate check-ins
+- Handle edge cases (user leaves early)
+- Structure code cleanly (controllers, services, routes)
+
+---
+
+### Output:
+- Full project structure
+- Prisma schema
+- API routes
+- Telegram bot setup code
+- Example messages

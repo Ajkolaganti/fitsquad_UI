@@ -1,0 +1,65 @@
+You are a senior frontend engineer. Build a production-ready frontend for a "Gym Accountability App" using Next.js (React) with Tailwind CSS.
+
+### App Features:
+1. User Authentication (use Firebase Auth or mock auth for now)
+2. Dashboard showing:
+   - Active challenges
+   - Friends in each challenge
+   - Weekly progress (4/4 days goal)
+   - Streak counter
+3. Create Challenge:
+   - Input: challenge name, number of days (default 4), minimum duration (default 40 mins)
+   - Generate invite link
+4. Join Challenge:
+   - Accept invite link and join challenge
+5. Gym Check-in Status:
+   - Show real-time status:
+     - "Not at gym"
+     - "At gym (timer running)"
+     - "Completed today"
+6. GPS Integration:
+   - Use browser Geolocation API
+   - Track user's location
+   - Check if within 100 meters of saved gym location
+7. Timer Logic:
+   - Start timer when user enters gym radius
+   - Stop when they leave
+   - Mark complete if >= 40 mins
+8. Leaderboard:
+   - Show friends ranked by completed days
+9. Notifications UI:
+   - Show recent activity like:
+     - "Ajay checked in at gym 💪"
+     - "John missed today 😴"
+
+### Tech Requirements:
+- Next.js App Router
+- Tailwind CSS for styling
+- Zustand or Context API for state
+- Axios or Fetch for API calls
+- Clean reusable components
+
+### Pages:
+- /login
+- /dashboard
+- /challenge/[id]
+- /create-challenge
+
+### Components:
+- ChallengeCard
+- Leaderboard
+- ActivityFeed
+- Timer
+- LocationTracker
+
+### Important:
+- Write clean, modular code
+- Include hooks for GPS tracking
+- Handle permission errors for location
+- Show loading states
+
+### Output:
+- Full folder structure
+- Key components code
+- Example pages
+- Reusable hooks (useLocation, useTimer)

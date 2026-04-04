@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --surface-0: #000000;
+  --surface-1: rgba(255, 255, 255, 0.05);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.09);
+  --accent: #0a84ff;
+  --accent-glow: rgba(10, 132, 255, 0.25);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply min-h-[100dvh] bg-black text-zinc-100 antialiased;
+  font-feature-settings: "ss01" on, "cv11" on;
+}
+
+/* Safe area */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Frosted panel — iOS-style */
+@layer utilities {
+  .glass-panel {
+    @apply border border-white/[0.08] bg-white/[0.05] shadow-glass-sm backdrop-blur-2xl;
+  }
+  .glass-panel-strong {
+    @apply border border-white/[0.1] bg-white/[0.07] shadow-glass backdrop-blur-3xl;
+  }
+}
+
+/* Subtle mesh (Apple marketing–style, restrained) */
+.mesh-bg {
+  background:
+    radial-gradient(
+      ellipse 120% 80% at 50% -30%,
+      rgba(10, 132, 255, 0.14),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 80% 50% at 100% 20%,
+      rgba(191, 90, 242, 0.08),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 0% 60%,
+      rgba(48, 209, 88, 0.06),
+      transparent 45%
+    ),
+    #000000;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+input:focus {
+  outline: none;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
