@@ -51,6 +51,38 @@ export function markChatRead(
   }
 }
 
+/** Newest message by `createdAt` (API may return oldest-first or newest-first). */
+export function pickNewestMessageByCreatedAt<T extends { createdAt: string }>(
+  messages: T[]
+): T | null {
+  if (messages.length === 0) return null;
+  let best = messages[0]!;
+  let bestT = new Date(best.createdAt).getTime();
+  for (let i = 1; i < messages.length; i++) {
+    const m = messages[i]!;
+    const t = new Date(m.createdAt).getTime();
+    if (Number.isFinite(t) && t >= bestT) {
+      bestT = t;
+      best = m;
+    }
+  }
+  return best;
+}
+
+/**
+ * If the user has no read cursor for this squad yet, set it to `latestCreatedAt`.
+ * Without this, `countUnreadMessages(..., null)` counts every message in history (up to the fetch limit),
+ * so every squad shows max unread on each app open.
+ */
+export function seedChatReadIfMissing(
+  userId: string,
+  challengeId: string,
+  latestCreatedAt: string
+): void {
+  if (getLastReadCreatedAt(userId, challengeId)) return;
+  markChatRead(userId, challengeId, latestCreatedAt);
+}
+
 /** Counts messages strictly after `lastRead` (by createdAt). If never read, all count. */
 export function countUnreadMessages(
   messages: { createdAt: string }[],

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Rocket, Users } from "lucide-react";
+import { Home, Trophy, Users } from "lucide-react";
 
 const nav = [
   {
@@ -18,11 +18,11 @@ const nav = [
     match: (p: string) => p === "/squads" || p.startsWith("/squads/"),
   },
   {
-    href: "/start",
-    label: "Start",
-    icon: Rocket,
+    href: "/challenges",
+    label: "Challenges",
+    icon: Trophy,
     match: (p: string) =>
-      p === "/start" ||
+      p === "/challenges" ||
       p.startsWith("/create-challenge") ||
       p.startsWith("/join"),
   },

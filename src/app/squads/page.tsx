@@ -9,6 +9,8 @@ import { apiGetChallenge, apiGetChatMessages, isApiConfigured } from "@/lib/api"
 import {
   countUnreadMessages,
   getLastReadCreatedAt,
+  pickNewestMessageByCreatedAt,
+  seedChatReadIfMissing,
 } from "@/lib/chatReadState";
 import { parseChatContent } from "@/lib/chat-media";
 import { MOCK_ACTIVITIES } from "@/lib/mock-data";
@@ -110,9 +112,11 @@ export default function SquadsPage() {
     const bump = () => setListRefresh((n) => n + 1);
     window.addEventListener("fitsquad-chat-read", bump);
     window.addEventListener("focus", bump);
+    window.addEventListener("storage", bump);
     return () => {
       window.removeEventListener("fitsquad-chat-read", bump);
       window.removeEventListener("focus", bump);
+      window.removeEventListener("storage", bump);
     };
   }, []);
 
@@ -140,6 +144,9 @@ export default function SquadsPage() {
       }));
       const next: Record<string, SquadPreview> = {};
       for (const c of challenges) {
+        if (!getLastReadCreatedAt(user.id, c.id) && lastAct) {
+          seedChatReadIfMissing(user.id, c.id, lastAct.createdAt);
+        }
         const lastRead = getLastReadCreatedAt(user.id, c.id);
         const unread = Math.min(99, countUnreadMessages(mockMsgs, lastRead));
         next[c.id] = {
@@ -157,16 +164,16 @@ export default function SquadsPage() {
       const entries = await Promise.all(
         challenges.map(async (c) => {
           try {
-            const lastRead = getLastReadCreatedAt(user.id, c.id);
             const msgs1 = await apiGetChatMessages(c.id, { limit: 1 });
-            const last =
-              msgs1.length > 0 ? msgs1[msgs1.length - 1]! : null;
+            const last = pickNewestMessageByCreatedAt(msgs1);
             if (!last) {
               return [
                 c.id,
                 { text: "No messages yet", time: "", unread: 0 },
               ] as const;
             }
+            seedChatReadIfMissing(user.id, c.id, last.createdAt);
+            const lastRead = getLastReadCreatedAt(user.id, c.id);
             const previewText = previewFromMessage(last).slice(0, 72);
             const time = formatListTime(last.createdAt);
             const lastT = new Date(last.createdAt).getTime();
@@ -175,7 +182,10 @@ export default function SquadsPage() {
               return [c.id, { text: previewText, time, unread: 0 }] as const;
             }
             const batch = await apiGetChatMessages(c.id, { limit: 80 });
-            const unread = Math.min(99, countUnreadMessages(batch, lastRead));
+            const unread = Math.min(
+              99,
+              countUnreadMessages(batch, lastRead)
+            );
             return [c.id, { text: previewText, time, unread }] as const;
           } catch {
             return [
@@ -239,10 +249,10 @@ export default function SquadsPage() {
           </p>
           <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
             <Link
-              href="/start"
+              href="/challenges"
               className="rounded-2xl bg-[#0d9f6e] px-6 py-3.5 text-sm font-semibold text-white shadow-md"
             >
-              Start a challenge
+              Challenges
             </Link>
           </div>
         </div>
