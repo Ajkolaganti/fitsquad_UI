@@ -61,12 +61,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   upsertChallenge: (challenge) => {
     const list = get().challenges;
     const i = list.findIndex((c) => c.id === challenge.id);
+    const prev = i >= 0 ? list[i] : null;
+    const merged =
+      prev && challenge.inviteCode == null && prev.inviteCode
+        ? { ...challenge, inviteCode: prev.inviteCode }
+        : challenge;
     if (i >= 0) {
       const next = [...list];
-      next[i] = challenge;
+      next[i] = merged;
       set({ challenges: next });
     } else {
-      set({ challenges: [challenge, ...list] });
+      set({ challenges: [merged, ...list] });
     }
   },
 }));

@@ -7,6 +7,7 @@ import { syncSessionToApp } from "@/lib/auth-session";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import {
+  apiForgotPassword,
   apiLogin,
   apiRegister,
   apiResendVerification,
@@ -85,6 +86,54 @@ export default function LoginPage() {
       router.replace("/dashboard");
     } catch (e: unknown) {
       setErr(getApiErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onApiForgotPassword() {
+    const em = email.trim();
+    if (!em) {
+      setErr("Enter your email address first.");
+      return;
+    }
+    setErr(null);
+    setInfo(null);
+    setLoading(true);
+    try {
+      const { message } = await apiForgotPassword({ email: em });
+      setInfo(message);
+    } catch (e: unknown) {
+      setErr(getApiErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onSupabaseForgotPassword() {
+    const em = email.trim();
+    if (!em) {
+      setErr("Enter your email address first.");
+      return;
+    }
+    setErr(null);
+    setInfo(null);
+    setLoading(true);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const { error } = await supabase.auth.resetPasswordForEmail(em, {
+        redirectTo: `${origin}/auth/update-password`,
+      });
+      if (error) throw error;
+      setInfo("Check your inbox for a link to reset your password.");
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message: string }).message)
+          : "Could not send reset email.";
+      setErr(msg);
     } finally {
       setLoading(false);
     }
@@ -299,12 +348,24 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
-              >
-                Password
-              </label>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label
+                  htmlFor="password"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                >
+                  Password
+                </label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => void onApiForgotPassword()}
+                    className="shrink-0 text-[11px] font-medium text-apple-blue hover:text-apple-blue-hover disabled:opacity-50"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <input
                 id="password"
                 type="password"
@@ -350,12 +411,6 @@ export default function LoginPage() {
                 Resend verification email
               </button>
             )}
-
-            <p className="text-center text-[11px] leading-relaxed text-zinc-600">
-              Registration sends a verification link from FitSquad (24 h). After
-              you verify, sign in here. Links open{" "}
-              <code className="text-zinc-500">/verify-email?token=…</code>.
-            </p>
           </form>
         ) : supabaseMode ? (
           <form
@@ -434,12 +489,24 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
-              >
-                Password
-              </label>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label
+                  htmlFor="password"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                >
+                  Password
+                </label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => void onSupabaseForgotPassword()}
+                    className="shrink-0 text-[11px] font-medium text-apple-blue hover:text-apple-blue-hover disabled:opacity-50"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <input
                 id="password"
                 type="password"
@@ -474,11 +541,6 @@ export default function LoginPage() {
                   ? "Create account"
                   : "Sign in"}
             </button>
-
-            <p className="text-center text-[11px] leading-relaxed text-zinc-600">
-              Verification emails are sent from your Supabase project (e.g. SMTP
-              via Resend). Configure Auth → SMTP in the Supabase dashboard.
-            </p>
           </form>
         ) : (
           <form onSubmit={onDemoSubmit} className="space-y-4">
@@ -515,22 +577,6 @@ export default function LoginPage() {
               {loading ? "Getting ready…" : "Continue"}
             </button>
           </form>
-        )}
-
-        {apiMode && (
-          <p className="mt-10 text-center text-xs text-zinc-600">
-            API calls use the JWT from <code className="text-zinc-500">POST /auth/login</code>{" "}
-            (<code className="text-zinc-500">Authorization: Bearer</code>).{" "}
-            <code className="text-zinc-500">GET /auth/me</code> should validate the token
-            and return your profile.
-          </p>
-        )}
-        {!apiMode && supabaseMode && (
-          <p className="mt-10 text-center text-xs text-zinc-600">
-            API requests send your Supabase session token. Ensure{" "}
-            <code className="text-zinc-500">GET /auth/me</code> validates the JWT
-            and returns your app user.
-          </p>
         )}
       </div>
     </div>

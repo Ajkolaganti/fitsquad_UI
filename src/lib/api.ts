@@ -157,6 +157,35 @@ export async function apiResendVerification(body: {
   return { message: data.message };
 }
 
+/** Sends password-reset email (token link). Same response message for any email. */
+export async function apiForgotPassword(body: {
+  email: string;
+}): Promise<{ message: string }> {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+  }>("/auth/forgot-password", body);
+  if (!data.success) {
+    throw new Error(data.message || "Request failed");
+  }
+  return { message: data.message };
+}
+
+/** Completes password reset from email link (`?token=`). */
+export async function apiResetPassword(body: {
+  token: string;
+  newPassword: string;
+}): Promise<{ message: string }> {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+  }>("/auth/reset-password", body);
+  if (!data.success) {
+    throw new Error(data.message || "Reset failed");
+  }
+  return { message: data.message };
+}
+
 /** Current profile — requires `Authorization: Bearer` (Supabase access token). */
 export async function apiGetCurrentUser(): Promise<User> {
   const { data } = await api.get<{ success: boolean; user: ApiUser }>(

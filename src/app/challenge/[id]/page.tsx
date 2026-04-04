@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Flame, Users } from "lucide-react";
+import { ArrowLeft, Copy, Flame, Users } from "lucide-react";
 import { Leaderboard } from "@/components/Leaderboard";
 import { ChallengeChat } from "@/components/ChallengeChat";
 import { LocationTracker } from "@/components/LocationTracker";
@@ -52,6 +52,7 @@ export default function ChallengeDetailPage() {
   const [serverElapsedMinutes, setServerElapsedMinutes] = useState<
     number | null
   >(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
 
   const challenge = useAppStore((s) =>
     s.challenges.find((c) => c.id === id)
@@ -236,6 +237,18 @@ export default function ChallengeDetailPage() {
       ? leaderboardRows
       : challenge?.participants ?? [];
 
+  const inviteUrl =
+    typeof window !== "undefined" && challenge?.inviteCode
+      ? `${window.location.origin}/join?code=${challenge.inviteCode}`
+      : "";
+
+  async function copyInviteLink() {
+    if (!inviteUrl) return;
+    await navigator.clipboard.writeText(inviteUrl);
+    setInviteCopied(true);
+    setTimeout(() => setInviteCopied(false), 2000);
+  }
+
   if (!hydrated || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -316,6 +329,28 @@ export default function ChallengeDetailPage() {
           )}
         </div>
       </div>
+
+      {challenge.inviteCode && inviteUrl ? (
+        <div className="mb-5 rounded-[22px] border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-xl">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            Invite link
+          </p>
+          <p className="break-all rounded-xl bg-black/40 px-3 py-2.5 font-mono text-xs text-zinc-300">
+            {inviteUrl}
+          </p>
+          <button
+            type="button"
+            onClick={() => void copyInviteLink()}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-apple-green py-3.5 text-sm font-semibold text-black transition active:scale-[0.99] hover:opacity-90"
+          >
+            <Copy className="h-4 w-4" />
+            {inviteCopied ? "Copied!" : "Copy link"}
+          </button>
+          <p className="mt-3 text-center text-xs text-zinc-500">
+            Share this link anytime so friends can join this challenge.
+          </p>
+        </div>
+      ) : null}
 
       {/* Timer */}
       <div className="mb-5">
