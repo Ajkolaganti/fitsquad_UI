@@ -8,20 +8,29 @@ import {
 } from "react";
 import Link from "next/link";
 import { ArrowLeft, Paperclip, Send, Smile, X } from "lucide-react";
-import type { ApiChatMessage } from "@/lib/api-types";
+import type { ApiChatMessage, ApiChatUrlContent } from "@/lib/api-types";
 import {
   apiGetChatMessages,
+  apiSendChatImage,
   apiSendChatMessage,
   getApiErrorMessage,
 } from "@/lib/api";
-import {
-  buildImageMessage,
-  compressImageFile,
-  parseChatContent,
-} from "@/lib/chat-media";
+import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
+import { compressImageFile, parseChatContent } from "@/lib/chat-media";
 import { MOCK_ACTIVITIES } from "@/lib/mock-data";
 
-const POLL_MS = 8000;
+/** Backup refresh if Realtime is unavailable; live updates use Supabase + re-fetch. */
+const POLL_MS = 30_000;
+
+function urlPayloadFromContent(
+  content: ApiChatMessage["content"]
+): ApiChatUrlContent | null {
+  if (content && typeof content === "object" && "url" in content) {
+    const u = (content as ApiChatUrlContent).url;
+    if (typeof u === "string" && u.length > 0) return content as ApiChatUrlContent;
+  }
+  return null;
+}
 
 function formatBubbleTime(iso: string) {
   const d = new Date(iso);
@@ -50,6 +59,7 @@ function mockMessagesForChallenge(challengeId: string): ApiChatMessage[] {
     userId: null,
     type: "SYSTEM",
     content: a.message,
+    mediaUrl: null,
     createdAt: a.createdAt,
     user: null,
   }));
@@ -120,6 +130,30 @@ export function SquadChatThread({
     return () => clearInterval(id);
   }, [apiMode, loadMessages]);
 
+  /** Realtime only signals new rows; `payload.new` is encrypted — always re-fetch via API. */
+  useEffect(() => {
+    if (!apiMode || !hasSupabaseConfig()) return;
+    const supabase = getSupabaseBrowserClient();
+    const channel = supabase
+      .channel(`chat:${challengeId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `challengeId=eq.${challengeId}`,
+        },
+        () => {
+          void loadMessages();
+        }
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [apiMode, challengeId, loadMessages]);
+
   useEffect(() => {
     if (!apiMode) return;
     const onVis = () => {
@@ -170,13 +204,36 @@ export function SquadChatThread({
     [apiMode, sending, challengeId, currentUserId, loadMessages]
   );
 
+  const sendImageFromDataUrl = useCallback(
+    async (dataUrl: string, caption: string) => {
+      if (!apiMode || sending) return;
+      setSending(true);
+      setErr(null);
+      try {
+        const blob = await (await fetch(dataUrl)).blob();
+        await apiSendChatImage(challengeId, {
+          userId: currentUserId,
+          image: blob,
+          caption: caption || undefined,
+        });
+        setDraft("");
+        setPendingImage(null);
+        await loadMessages();
+      } catch (e: unknown) {
+        setErr(getApiErrorMessage(e));
+      } finally {
+        setSending(false);
+      }
+    },
+    [apiMode, sending, challengeId, currentUserId, loadMessages]
+  );
+
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
     if (!apiMode || sending) return;
     const text = draft.trim();
     if (pendingImage) {
-      const payload = buildImageMessage(pendingImage, text || undefined);
-      await sendPayload(payload);
+      await sendImageFromDataUrl(pendingImage, text);
       return;
     }
     if (!text) return;
@@ -262,13 +319,17 @@ export function SquadChatThread({
           ) : (
             messages.map((m) => {
               const isSystem = m.type === "SYSTEM";
-              const isMine = m.type === "USER" && m.userId === currentUserId;
+              const isMine =
+                (m.type === "USER" ||
+                  m.type === "IMAGE" ||
+                  m.type === "URL") &&
+                m.userId === currentUserId;
 
               if (isSystem) {
                 return (
                   <li key={m.id} className="px-2 py-1 text-center">
                     <span className="inline-block max-w-[92%] rounded-lg border border-black/5 bg-white/90 px-2 py-1 text-[11px] leading-snug text-pacer-muted shadow-sm">
-                      {m.content}
+                      {typeof m.content === "string" ? m.content : ""}
                     </span>
                     <p className="mt-1 text-[10px] text-pacer-muted/80">
                       {formatSystemTime(m.createdAt)}
@@ -277,7 +338,18 @@ export function SquadChatThread({
                 );
               }
 
-              const parsed = parseChatContent(m.content);
+              const urlPayload =
+                m.type === "URL" ? urlPayloadFromContent(m.content) : null;
+              const imageCaption =
+                m.type === "IMAGE" && typeof m.content === "string"
+                  ? m.content.trim()
+                  : "";
+              const userParsed =
+                m.type === "USER"
+                  ? parseChatContent(
+                      typeof m.content === "string" ? m.content : ""
+                    )
+                  : null;
 
               return (
                 <li
@@ -301,24 +373,67 @@ export function SquadChatThread({
                           : "rounded-tl-none border border-black/6 bg-white text-pacer-ink"
                       }`}
                     >
-                      {parsed.kind === "image" ? (
+                      {m.type === "IMAGE" ? (
+                        m.mediaUrl ? (
+                          <div className="space-y-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={m.mediaUrl}
+                              alt={imageCaption || "Shared image"}
+                              className="max-h-48 w-full max-w-[240px] rounded-md object-cover sm:max-w-[280px]"
+                              loading="lazy"
+                            />
+                            {imageCaption ? (
+                              <p className="whitespace-pre-wrap break-words text-[14px] leading-snug">
+                                {imageCaption}
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words text-[14px] leading-snug text-pacer-muted">
+                            {imageCaption || "Photo unavailable"}
+                          </p>
+                        )
+                      ) : m.type === "URL" ? (
+                        urlPayload ? (
+                          <div className="space-y-1">
+                            <a
+                              href={urlPayload.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="break-words text-[14px] font-medium leading-snug text-[#0b6e4f] underline decoration-[#0b6e4f]/40 underline-offset-2 hover:decoration-[#0b6e4f]"
+                            >
+                              {urlPayload.url}
+                            </a>
+                            {urlPayload.text ? (
+                              <p className="whitespace-pre-wrap break-words text-[13px] leading-snug text-pacer-ink/90">
+                                {urlPayload.text}
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words text-[14px] leading-snug text-pacer-muted">
+                            Invalid link
+                          </p>
+                        )
+                      ) : userParsed?.kind === "image" ? (
                         <div className="space-y-1">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={parsed.dataUrl}
+                            src={userParsed.dataUrl}
                             alt=""
                             className="max-h-48 w-full max-w-[240px] rounded-md object-cover sm:max-w-[280px]"
                             loading="lazy"
                           />
-                          {parsed.caption && (
+                          {userParsed.caption && (
                             <p className="whitespace-pre-wrap break-words text-[14px] leading-snug">
-                              {parsed.caption}
+                              {userParsed.caption}
                             </p>
                           )}
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap break-words text-[14px] leading-snug">
-                          {parsed.text}
+                          {userParsed?.text ?? ""}
                         </p>
                       )}
                       <div

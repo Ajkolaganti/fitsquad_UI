@@ -98,7 +98,16 @@ export interface ApiCheckinResponse {
   inside?: boolean;
 }
 
-export type ApiChatMessageType = "USER" | "SYSTEM";
+export type ApiChatMessageType = "USER" | "SYSTEM" | "IMAGE" | "URL";
+
+/** `POST /chat/:challengeId/send-url` — stored as JSON on `URL` messages */
+export interface ApiChatUrlContent {
+  url: string;
+  text?: string;
+}
+
+/** Plain text, caption string (`IMAGE`), or structured link (`URL`). */
+export type ApiChatMessageContent = string | ApiChatUrlContent;
 
 export interface ApiChatMessageUser {
   id: string;
@@ -112,7 +121,9 @@ export interface ApiChatMessage {
   challengeId: string;
   userId: string | null;
   type: ApiChatMessageType;
-  content: string;
+  content: ApiChatMessageContent;
+  /** Public URL for `IMAGE` messages from Supabase Storage */
+  mediaUrl?: string | null;
   createdAt: string;
   user: ApiChatMessageUser | null;
 }

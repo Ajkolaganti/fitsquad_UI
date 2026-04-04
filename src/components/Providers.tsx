@@ -13,6 +13,7 @@ import {
   getStoredBackendAccessToken,
 } from "@/lib/auth-tokens";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
+import { trySubscribePushNotifications } from "@/lib/push-subscription";
 import { hydrateUserFromStorage, useAppStore } from "@/store/useAppStore";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -82,6 +83,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  const hydrated = useAppStore((s) => s.hydrated);
+  const user = useAppStore((s) => s.user);
+
+  useEffect(() => {
+    if (!hydrated || !user) return;
+    void trySubscribePushNotifications(user.id);
+  }, [hydrated, user]);
 
   return <>{children}</>;
 }

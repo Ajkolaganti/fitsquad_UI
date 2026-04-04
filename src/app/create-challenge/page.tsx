@@ -81,12 +81,15 @@ export default function CreateChallengePage() {
     setLoading(true);
     try {
       if (isApiConfigured()) {
-        const ch = await apiCreateChallenge({
-          name,
-          daysPerWeek,
-          durationMinutes,
-          telegramGroupId: telegramGroupId.trim() || undefined,
-        });
+        const ch = await apiCreateChallenge(
+          {
+            name,
+            daysPerWeek,
+            durationMinutes,
+            telegramGroupId: telegramGroupId.trim() || undefined,
+          },
+          user.id
+        );
         upsertChallenge(ch);
         setCreated(ch);
       } else {

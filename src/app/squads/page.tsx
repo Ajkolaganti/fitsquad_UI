@@ -27,8 +27,31 @@ function formatListTime(iso: string) {
 }
 
 function previewFromMessage(m: ApiChatMessage): string {
-  if (m.type === "SYSTEM") return m.content;
-  const p = parseChatContent(m.content);
+  if (m.type === "SYSTEM") {
+    return typeof m.content === "string" ? m.content : "";
+  }
+  if (m.type === "IMAGE") {
+    const cap =
+      typeof m.content === "string" && m.content.trim()
+        ? m.content.trim()
+        : "";
+    const t = cap ? `📷 ${cap}` : "📷 Photo";
+    return m.user?.name ? `${m.user.name}: ${t}` : t;
+  }
+  if (m.type === "URL") {
+    const c = m.content;
+    const text =
+      typeof c === "object" && c && "text" in c && c.text
+        ? String(c.text)
+        : "";
+    const url =
+      typeof c === "object" && c && "url" in c ? String(c.url) : "";
+    const label = text || url || "Link";
+    const t = `🔗 ${label}`;
+    return m.user?.name ? `${m.user.name}: ${t}` : t;
+  }
+  const raw = typeof m.content === "string" ? m.content : "";
+  const p = parseChatContent(raw);
   if (p.kind === "image") {
     const t = p.caption ? `📷 ${p.caption}` : "📷 Photo";
     return m.user?.name ? `${m.user.name}: ${t}` : t;

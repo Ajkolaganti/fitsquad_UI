@@ -10,6 +10,7 @@ import { persistBackendTokens } from "@/lib/auth-tokens";
 import type {
   ApiChallenge,
   ApiChatMessage,
+  ApiChatUrlContent,
   ApiCheckinResponse,
   ApiJoinParticipant,
   ApiLeaderboardRow,
@@ -210,12 +211,16 @@ export async function apiGetChallenge(
   return mapApiChallengeToChallenge(data.challenge, currentUserId);
 }
 
-export async function apiCreateChallenge(body: {
-  name: string;
-  daysPerWeek: number;
-  durationMinutes: number;
-  telegramGroupId?: string;
-}): Promise<Challenge> {
+/** Create challenge; joins creator via invite code if create response does not list them yet. */
+export async function apiCreateChallenge(
+  body: {
+    name: string;
+    daysPerWeek: number;
+    durationMinutes: number;
+    telegramGroupId?: string;
+  },
+  creatorUserId: string
+): Promise<Challenge> {
   const { data } = await api.post<{ success: boolean; challenge: ApiChallenge }>(
     "/challenge/create",
     body
@@ -223,7 +228,24 @@ export async function apiCreateChallenge(body: {
   if (!data.success || !data.challenge) {
     throw new Error("Failed to create challenge");
   }
-  return mapApiChallengeToChallenge(data.challenge);
+  const raw = data.challenge;
+  const listed = raw.participants ?? [];
+  if (listed.some((p) => p.userId === creatorUserId)) {
+    return mapApiChallengeToChallenge(raw, creatorUserId);
+  }
+  const code = raw.inviteCode;
+  if (!code) {
+    return mapApiChallengeToChallenge(raw, creatorUserId);
+  }
+  try {
+    return await apiJoinChallenge(creatorUserId, code);
+  } catch (err: unknown) {
+    const ax = err as AxiosError<{ message?: string }>;
+    if (axios.isAxiosError(ax) && ax.response?.status === 409) {
+      return apiGetChallenge(raw.id, creatorUserId);
+    }
+    throw err;
+  }
 }
 
 export async function apiJoinChallenge(
@@ -278,6 +300,19 @@ export async function apiGetLeaderboard(
   return mapLeaderboardRows(data.leaderboard);
 }
 
+function normalizeChatMessage(m: ApiChatMessage): ApiChatMessage {
+  if (m.type !== "URL" || typeof m.content !== "string") return m;
+  try {
+    const parsed = JSON.parse(m.content) as ApiChatUrlContent;
+    if (parsed && typeof parsed.url === "string") {
+      return { ...m, content: parsed };
+    }
+  } catch {
+    /* keep as string */
+  }
+  return m;
+}
+
 export async function apiGetChatMessages(
   challengeId: string,
   opts?: { limit?: number; before?: string }
@@ -294,7 +329,7 @@ export async function apiGetChatMessages(
   if (!data.success || !Array.isArray(data.data)) {
     throw new Error("Failed to load chat");
   }
-  return data.data;
+  return data.data.map(normalizeChatMessage);
 }
 
 export async function apiSendChatMessage(
@@ -308,7 +343,45 @@ export async function apiSendChatMessage(
   if (!data.success || !data.data) {
     throw new Error("Failed to send message");
   }
-  return data.data;
+  return normalizeChatMessage(data.data);
+}
+
+/** `POST /chat/:challengeId/send-image` — multipart `userId`, `image`, optional `caption`. */
+export async function apiSendChatImage(
+  challengeId: string,
+  opts: { userId: string; image: Blob; caption?: string }
+): Promise<ApiChatMessage> {
+  const form = new FormData();
+  form.append("userId", opts.userId);
+  form.append("image", opts.image, "image.jpg");
+  if (opts.caption?.trim()) form.append("caption", opts.caption.trim());
+  const { data } = await api.post<{
+    success: boolean;
+    data: ApiChatMessage;
+  }>(`/chat/${challengeId}/send-image`, form, {
+    timeout: 120_000,
+    maxBodyLength: Infinity,
+    maxContentLength: Infinity,
+  });
+  if (!data.success || !data.data) {
+    throw new Error("Failed to send image");
+  }
+  return normalizeChatMessage(data.data);
+}
+
+/** `POST /chat/:challengeId/send-url` */
+export async function apiSendChatUrl(
+  challengeId: string,
+  body: { userId: string; url: string; text?: string }
+): Promise<ApiChatMessage> {
+  const { data } = await api.post<{
+    success: boolean;
+    data: ApiChatMessage;
+  }>(`/chat/${challengeId}/send-url`, body);
+  if (!data.success || !data.data) {
+    throw new Error("Failed to send link");
+  }
+  return normalizeChatMessage(data.data);
 }
 
 export function isNetworkError(err: unknown): boolean {
