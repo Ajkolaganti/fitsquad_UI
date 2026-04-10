@@ -78,6 +78,7 @@ function mapParticipant(p: ApiChallengeParticipant): Participant {
     completedDays: p.completedDays,
     rank: p.rank,
     lastCheckin: p.lastCheckin ?? null,
+    joinedAt: p.joinedAt ?? null,
   };
 }
 
@@ -107,7 +108,7 @@ export function mapApiChallengeToChallenge(
     myProgress: me
       ? {
           streak: me.streak,
-          completedDaysThisWeek: me.completedDays,
+          completedDaysTotal: me.completedDays,
           weeklyGoal: c.daysPerWeek,
         }
       : undefined,
@@ -128,5 +129,6 @@ export function mapLeaderboardRows(rows: ApiLeaderboardRow[]): Participant[] {
     completedDays: r.completedDays,
     rank: r.rank,
     lastCheckin: r.lastCheckin ?? null,
+    joinedAt: r.joinedAt ?? null,
   }));
 }

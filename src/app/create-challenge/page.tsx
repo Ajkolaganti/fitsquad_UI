@@ -79,7 +79,7 @@ function buildLocalChallenge(
     ],
     myProgress: {
       streak: 0,
-      completedDaysThisWeek: 0,
+      completedDaysTotal: 0,
       weeklyGoal: daysPerWeek,
     },
   };

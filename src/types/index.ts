@@ -39,7 +39,8 @@ export interface Challenge {
   participants: Participant[];
   myProgress?: {
     streak: number;
-    completedDaysThisWeek: number;
+    /** Total counted gym days in this challenge (API `completedDays`). */
+    completedDaysTotal: number;
     weeklyGoal: number;
   };
   challengeKind?: ChallengeKind;
@@ -57,6 +58,7 @@ export interface Participant {
   rank?: number;
   /** ISO timestamp of last check-in at gym (from API leaderboard / challenge). */
   lastCheckin?: string | null;
+  joinedAt?: string | null;
 }
 
 export interface ActivityItem {

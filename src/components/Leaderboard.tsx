@@ -37,7 +37,7 @@ export function Leaderboard({ participants, currentUserId }: LeaderboardProps) {
             <h3 className="font-display text-base font-semibold text-pacer-ink">
               Squad Ranking
             </h3>
-            <p className="text-xs text-pacer-muted">By completed days</p>
+            <p className="text-xs text-pacer-muted">By total gym days in this challenge</p>
           </div>
         </div>
       </div>

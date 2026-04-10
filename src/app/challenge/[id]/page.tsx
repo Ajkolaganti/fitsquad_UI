@@ -302,21 +302,19 @@ export default function ChallengeDetailPage() {
           )}
 
           {prog && (
-            <div className="mt-4">
-              <div className="mb-1.5 flex justify-between text-xs">
-                <span className="text-pacer-muted">This week</span>
-                <span className="font-semibold text-pacer-ink">
-                  {prog.completedDaysThisWeek}/{prog.weeklyGoal} days
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-pacer-border/80">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-pacer-primary to-teal-400 transition-all duration-700"
-                  style={{
-                    width: `${Math.round((prog.completedDaysThisWeek / prog.weeklyGoal) * 100)}%`,
-                  }}
-                />
-              </div>
+            <div className="mt-4 rounded-xl border border-pacer-border/80 bg-pacer-cream/50 px-4 py-3">
+              <p className="text-xs font-medium text-pacer-muted">
+                Your totals in this squad
+              </p>
+              <p className="mt-1 text-sm font-semibold text-pacer-ink">
+                <span className="tabular-nums">{prog.completedDaysTotal}</span> gym
+                days logged · target{" "}
+                <span className="tabular-nums">{prog.weeklyGoal}</span>× / week
+              </p>
+              <p className="mt-2 text-[11px] leading-relaxed text-pacer-muted">
+                Streak is per this challenge and comes from the server (usually
+                consecutive days with a completed session).
+              </p>
             </div>
           )}
         </div>
@@ -370,6 +368,7 @@ export default function ChallengeDetailPage() {
         <ChallengeGymFeed
           participants={leaderboardData}
           goalMinutes={challenge.durationMinutes}
+          weeklyDayTarget={challenge.daysPerWeek}
           currentUserId={user.id}
           myGym={{
             minutesToday:

@@ -22,12 +22,6 @@ function getAccent(id: string) {
 
 export function ChallengeCard({ challenge }: ChallengeCardProps) {
   const progress = challenge.myProgress;
-  const pct = progress
-    ? Math.min(
-        100,
-        Math.round((progress.completedDaysThisWeek / progress.weeklyGoal) * 100)
-      )
-    : 0;
   const accent = getAccent(challenge.id);
 
   return (
@@ -67,19 +61,24 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
         </div>
 
         {progress && (
-          <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="text-pacer-muted">This week</span>
-              <span className="font-semibold tabular-nums text-pacer-ink">
-                {progress.completedDaysThisWeek}
-                <span className="text-pacer-muted">/{progress.weeklyGoal}</span>
-              </span>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-pacer-border/80 bg-pacer-cream/60 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-pacer-muted">
+                Logged
+              </p>
+              <p className="mt-0.5 font-display text-lg font-semibold tabular-nums text-pacer-ink">
+                {progress.completedDaysTotal}
+                <span className="text-xs font-medium text-pacer-muted"> days</span>
+              </p>
             </div>
-            <div className="relative h-1.5 overflow-hidden rounded-full bg-pacer-border/80">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r ${accent} transition-all duration-700`}
-                style={{ width: `${pct}%` }}
-              />
+            <div className="rounded-xl border border-pacer-border/80 bg-pacer-cream/60 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-pacer-muted">
+                Target
+              </p>
+              <p className="mt-0.5 font-display text-lg font-semibold tabular-nums text-pacer-ink">
+                {progress.weeklyGoal}
+                <span className="text-xs font-medium text-pacer-muted">× / week</span>
+              </p>
             </div>
           </div>
         )}

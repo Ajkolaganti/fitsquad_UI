@@ -35,7 +35,7 @@ export const MOCK_CHALLENGES: Challenge[] = [
     ],
     myProgress: {
       streak: 12,
-      completedDaysThisWeek: 3,
+      completedDaysTotal: 3,
       weeklyGoal: 4,
     },
   },
@@ -65,7 +65,7 @@ export const MOCK_CHALLENGES: Challenge[] = [
     ],
     myProgress: {
       streak: 5,
-      completedDaysThisWeek: 2,
+      completedDaysTotal: 2,
       weeklyGoal: 3,
     },
   },

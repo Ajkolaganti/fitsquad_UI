@@ -67,16 +67,12 @@ export default function DashboardPage() {
     );
   }
 
-  const totalStreak = challenges.reduce(
-    (acc, c) => acc + (c.myProgress?.streak ?? 0),
+  const bestStreak = challenges.reduce(
+    (best, c) => Math.max(best, c.myProgress?.streak ?? 0),
     0
   );
-  const totalDone = challenges.reduce(
-    (acc, c) => acc + (c.myProgress?.completedDaysThisWeek ?? 0),
-    0
-  );
-  const totalGoal = challenges.reduce(
-    (acc, c) => acc + (c.myProgress?.weeklyGoal ?? 0),
+  const totalDaysLogged = challenges.reduce(
+    (acc, c) => acc + (c.myProgress?.completedDaysTotal ?? 0),
     0
   );
 
@@ -111,24 +107,25 @@ export default function DashboardPage() {
               </span>
             </div>
             <p className="font-display text-3xl font-semibold tabular-nums text-pacer-ink">
-              {totalStreak}
+              {bestStreak}
             </p>
-            <p className="text-xs text-pacer-muted">days in a row</p>
+            <p className="text-xs text-pacer-muted">
+              Best in one challenge · server counts consecutive days
+            </p>
           </div>
           <div className="rounded-[20px] border border-pacer-border bg-white p-4 shadow-glass-sm">
             <div className="mb-2 flex items-center gap-2">
               <Trophy className="h-4 w-4 text-amber-500" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
-                This week
+                Squad days
               </span>
             </div>
             <p className="font-display text-3xl font-semibold tabular-nums text-pacer-ink">
-              {totalDone}
-              <span className="text-lg font-normal text-pacer-muted/80">
-                /{totalGoal}
-              </span>
+              {totalDaysLogged}
             </p>
-            <p className="text-xs text-pacer-muted">days completed</p>
+            <p className="text-xs text-pacer-muted">
+              Total gym days logged across challenges
+            </p>
           </div>
         </div>
       )}
