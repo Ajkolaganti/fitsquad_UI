@@ -30,6 +30,7 @@ import {
   checkinIndicatesSessionCompleted,
 } from "@/lib/checkin-ui";
 import { getMockChallenge } from "@/lib/mock-data";
+import { getSafeInternalNextPath } from "@/lib/safe-next-path";
 import type { GymStatus, Participant } from "@/types";
 
 function todayKey() {
@@ -63,10 +64,13 @@ export default function ChallengeDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (hydrated && !user) {
-      router.replace("/login");
-    }
-  }, [hydrated, user, router]);
+    if (!hydrated || user) return;
+    const path = `/challenge/${id}`;
+    const next = getSafeInternalNextPath(path);
+    router.replace(
+      next ? `/login?next=${encodeURIComponent(next)}` : "/login"
+    );
+  }, [hydrated, user, router, id]);
 
   useEffect(() => {
     if (!hydrated || !user) return;

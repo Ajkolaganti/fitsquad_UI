@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { apiJoinChallenge, getApiErrorMessage, isApiConfigured } from "@/lib/api";
 import { getMockChallenge } from "@/lib/mock-data";
+import { getSafeInternalNextPath } from "@/lib/safe-next-path";
 
 function JoinInner() {
   const router = useRouter();
@@ -16,14 +17,84 @@ function JoinInner() {
   const [code, setCode] = useState(codeFromQuery);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const autoJoinStarted = useRef(false);
 
   useEffect(() => {
     setCode(codeFromQuery);
   }, [codeFromQuery]);
 
   useEffect(() => {
-    if (hydrated && !user) router.replace("/login");
-  }, [hydrated, user, router]);
+    if (!hydrated || user) return;
+    const joinPath =
+      codeFromQuery.trim().length > 0
+        ? `/join?code=${encodeURIComponent(codeFromQuery.trim())}`
+        : "/join";
+    const next = getSafeInternalNextPath(joinPath);
+    router.replace(
+      next ? `/login?next=${encodeURIComponent(next)}` : "/login"
+    );
+  }, [hydrated, user, router, codeFromQuery]);
+
+  useEffect(() => {
+    if (!hydrated || !user || !codeFromQuery.trim()) return;
+    if (autoJoinStarted.current) return;
+    autoJoinStarted.current = true;
+    let cancelled = false;
+    const attemptKey = `firsquad_autojoin_${codeFromQuery.trim().toUpperCase()}`;
+    if (
+      typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem(attemptKey) === "1"
+    ) {
+      autoJoinStarted.current = false;
+      return;
+    }
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(attemptKey, "1");
+    }
+
+    (async () => {
+      if (cancelled) return;
+      setLoading(true);
+      setErr(null);
+      try {
+        if (isApiConfigured()) {
+          const ch = await apiJoinChallenge(user.id, codeFromQuery.trim());
+          if (cancelled) return;
+          upsertChallenge(ch);
+          router.replace(`/challenge/${ch.id}`);
+        } else {
+          const mock = getMockChallenge("demo-1");
+          if (mock && codeFromQuery.toUpperCase().includes("DEMO")) {
+            if (cancelled) return;
+            upsertChallenge(mock);
+            router.replace(`/challenge/${mock.id}`);
+          } else {
+            if (typeof sessionStorage !== "undefined") {
+              sessionStorage.removeItem(attemptKey);
+            }
+            autoJoinStarted.current = false;
+            if (!cancelled) {
+              setErr(
+                'Mock mode: use invite code containing "DEMO" or create a new challenge.'
+              );
+            }
+          }
+        }
+      } catch (e: unknown) {
+        if (typeof sessionStorage !== "undefined") {
+          sessionStorage.removeItem(attemptKey);
+        }
+        autoJoinStarted.current = false;
+        if (!cancelled) setErr(getApiErrorMessage(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, user, codeFromQuery, router, upsertChallenge]);
 
   async function onJoin(e: React.FormEvent) {
     e.preventDefault();

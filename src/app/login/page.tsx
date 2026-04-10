@@ -14,6 +14,7 @@ import {
   getApiErrorMessage,
   isApiConfigured,
 } from "@/lib/api";
+import { readNextFromLocation } from "@/lib/safe-next-path";
 import { refreshChallengesFromServer } from "@/lib/user-challenges";
 import type { User } from "@/types";
 
@@ -85,7 +86,7 @@ export default function LoginPage() {
       const user = await apiLogin({ email: em, password: pw });
       setUser(user);
       await refreshChallengesFromServer(user.id);
-      router.replace("/dashboard");
+      router.replace(readNextFromLocation() ?? "/dashboard");
     } catch (e: unknown) {
       setErr(getApiErrorMessage(e));
     } finally {
@@ -201,7 +202,7 @@ export default function LoginPage() {
         }
         if (data.session) {
           await syncSessionToApp(data.session);
-          router.replace("/dashboard");
+          router.replace(readNextFromLocation() ?? "/dashboard");
           return;
         }
         return;
@@ -214,7 +215,7 @@ export default function LoginPage() {
       if (error) throw error;
       if (data.session) {
         await syncSessionToApp(data.session);
-        router.replace("/dashboard");
+        router.replace(readNextFromLocation() ?? "/dashboard");
       }
     } catch (e: unknown) {
       const msg =
@@ -233,7 +234,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       setUser(mockLogin(demoName));
-      router.replace("/dashboard");
+      router.replace(readNextFromLocation() ?? "/dashboard");
     } finally {
       setLoading(false);
     }
