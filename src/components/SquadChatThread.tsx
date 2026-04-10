@@ -7,7 +7,8 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { ArrowLeft, Paperclip, Send, Smile, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, LogOut, Paperclip, Send, Smile, X } from "lucide-react";
 import type { ApiChatMessage } from "@/lib/api-types";
 import {
   apiFetchChatMessageDecrypted,
@@ -17,6 +18,7 @@ import {
   apiSendChatUrl,
   getApiErrorMessage,
 } from "@/lib/api";
+import { leaveChallengeForUser } from "@/lib/leave-challenge";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabase/client";
 import { compressImageFile } from "@/lib/chat-media";
 import { SquadChatBubble } from "@/components/SquadChatBubble";
@@ -111,6 +113,7 @@ export function SquadChatThread({
   currentUserId,
   apiMode,
 }: SquadChatThreadProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<ApiChatMessage[]>([]);
   const [loading, setLoading] = useState(apiMode);
   const [sending, setSending] = useState(false);
@@ -118,6 +121,8 @@ export function SquadChatThread({
   const [err, setErr] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [leaveBusy, setLeaveBusy] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPanelRef = useRef<HTMLDivElement>(null);
@@ -351,30 +356,84 @@ export function SquadChatThread({
     }
   }
 
+  async function onConfirmLeaveSquad() {
+    setLeaveBusy(true);
+    setErr(null);
+    try {
+      await leaveChallengeForUser(challengeId, currentUserId);
+      router.replace("/squads");
+    } catch (e: unknown) {
+      setErr(getApiErrorMessage(e));
+    } finally {
+      setLeaveBusy(false);
+    }
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-[#0b6e4f]">
       {/* WhatsApp-style top bar — fitsquad tweak: mint accent strip */}
-      <header className="flex shrink-0 items-center gap-3 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white">
-        <Link
-          href="/squads"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10"
-          aria-label="Back to squads"
-        >
-          <ArrowLeft className="h-6 w-6" strokeWidth={2} />
-        </Link>
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-lg font-semibold">
-            {challengeName.trim().charAt(0).toUpperCase() || "S"}
+      <header className="shrink-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white">
+        <div className="flex items-center gap-3 pb-2">
+          <Link
+            href="/squads"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10"
+            aria-label="Back to squads"
+          >
+            <ArrowLeft className="h-6 w-6" strokeWidth={2} />
+          </Link>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-lg font-semibold">
+              {challengeName.trim().charAt(0).toUpperCase() || "S"}
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-[17px] font-semibold leading-tight">
+                {challengeName}
+              </h1>
+              <p className="truncate text-[12px] text-white/85">
+                fitsquad · squad chat
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h1 className="truncate font-display text-[17px] font-semibold leading-tight">
-              {challengeName}
-            </h1>
-            <p className="truncate text-[12px] text-white/85">
-              fitsquad · squad chat
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setLeaveOpen((o) => !o);
+              setErr(null);
+            }}
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-white/95 hover:bg-white/10"
+            aria-expanded={leaveOpen}
+            aria-label={leaveOpen ? "Close leave options" : "Leave squad"}
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="max-w-[4.5rem] truncate text-left">Leave</span>
+          </button>
         </div>
+        {leaveOpen ? (
+          <div className="border-t border-white/15 pb-3 pt-3">
+            <p className="text-[13px] leading-snug text-white/90">
+              Leave this squad? You can rejoin with an invite link if someone
+              shares one.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                disabled={leaveBusy}
+                onClick={() => setLeaveOpen(false)}
+                className="flex-1 rounded-xl bg-white/15 py-2.5 text-[13px] font-semibold text-white hover:bg-white/25 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={leaveBusy}
+                onClick={() => void onConfirmLeaveSquad()}
+                className="flex-1 rounded-xl bg-red-500 py-2.5 text-[13px] font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {leaveBusy ? "Leaving…" : "Leave squad"}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       {/* Chat body — classic WA wallpaper + bubbles */}

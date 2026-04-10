@@ -266,6 +266,20 @@ export async function apiJoinChallenge(
   return apiGetChallenge(data.participant.challengeId, userId);
 }
 
+/** Remove the current user from a challenge (backend must delete participant row). */
+export async function apiLeaveChallenge(
+  challengeId: string,
+  userId: string
+): Promise<void> {
+  const { data } = await api.post<{
+    success: boolean;
+    message?: string;
+  }>(`/challenge/${challengeId}/leave`, { userId });
+  if (!data.success) {
+    throw new Error(data.message || "Could not leave challenge");
+  }
+}
+
 export async function apiPostLocation(body: {
   userId: string;
   lat: number;

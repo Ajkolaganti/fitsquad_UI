@@ -49,6 +49,7 @@ interface AppState {
   setGymLocation: (lat: number, lng: number) => void;
   setChallenges: (challenges: Challenge[]) => void;
   upsertChallenge: (challenge: Challenge) => void;
+  removeChallenge: (challengeId: string) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -120,6 +121,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ challenges: next });
     const u = get().user;
     if (u) persistChallengesSnapshot(u.id, next);
+  },
+
+  removeChallenge: (challengeId) => {
+    const list = get().challenges.filter((c) => c.id !== challengeId);
+    set({ challenges: list });
+    const u = get().user;
+    if (u) persistChallengesSnapshot(u.id, list);
   },
 }));
 

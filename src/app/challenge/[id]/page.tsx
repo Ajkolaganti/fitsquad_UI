@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, Flame, Users } from "lucide-react";
+import { ArrowLeft, Copy, Flame, LogOut, Users } from "lucide-react";
 import { ChallengeGymFeed } from "@/components/ChallengeGymFeed";
 import { LocationTracker } from "@/components/LocationTracker";
 import { Timer } from "@/components/Timer";
@@ -29,6 +29,7 @@ import {
   checkinIndicatesNotAtGym,
   checkinIndicatesSessionCompleted,
 } from "@/lib/checkin-ui";
+import { leaveChallengeForUser } from "@/lib/leave-challenge";
 import { getMockChallenge } from "@/lib/mock-data";
 import { getSafeInternalNextPath } from "@/lib/safe-next-path";
 import type { GymStatus, Participant } from "@/types";
@@ -53,6 +54,9 @@ export default function ChallengeDetailPage() {
     number | null
   >(null);
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [leaveUi, setLeaveUi] = useState<"idle" | "confirm">("idle");
+  const [leaveBusy, setLeaveBusy] = useState(false);
+  const [leaveErr, setLeaveErr] = useState<string | null>(null);
 
   const challenge = useAppStore((s) =>
     s.challenges.find((c) => c.id === id)
@@ -244,6 +248,20 @@ export default function ChallengeDetailPage() {
     setTimeout(() => setInviteCopied(false), 2000);
   }
 
+  async function onConfirmLeave() {
+    if (!user || !challenge) return;
+    setLeaveErr(null);
+    setLeaveBusy(true);
+    try {
+      await leaveChallengeForUser(challenge.id, user.id);
+      router.replace("/challenges");
+    } catch (e: unknown) {
+      setLeaveErr(getApiErrorMessage(e));
+    } finally {
+      setLeaveBusy(false);
+    }
+  }
+
   if (!hydrated || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -397,6 +415,55 @@ export default function ChallengeDetailPage() {
           </Link>{" "}
           tab.
         </p>
+      </div>
+
+      <div className="rounded-[22px] border border-pacer-border bg-white p-5 shadow-sm backdrop-blur-xl">
+        {leaveUi === "idle" ? (
+          <button
+            type="button"
+            onClick={() => {
+              setLeaveErr(null);
+              setLeaveUi("confirm");
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50/80 py-3.5 text-sm font-semibold text-red-800 transition hover:bg-red-100"
+          >
+            <LogOut className="h-4 w-4" />
+            Leave squad
+          </button>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-center text-sm text-pacer-ink">
+              Leave &quot;{challenge.name}&quot;? You won&apos;t see this squad in
+              your list until you join again with an invite code.
+            </p>
+            {leaveErr ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-sm text-red-800">
+                {leaveErr}
+              </p>
+            ) : null}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={leaveBusy}
+                onClick={() => {
+                  setLeaveUi("idle");
+                  setLeaveErr(null);
+                }}
+                className="flex-1 rounded-2xl border border-pacer-border bg-pacer-mist py-3.5 text-sm font-semibold text-pacer-ink transition hover:bg-white disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={leaveBusy}
+                onClick={() => void onConfirmLeave()}
+                className="flex-1 rounded-2xl bg-red-600 py-3.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {leaveBusy ? "Leaving…" : "Leave"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

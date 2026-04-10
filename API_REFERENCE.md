@@ -353,6 +353,43 @@ Triggers a Telegram welcome message to the group if configured.
 
 ---
 
+### POST `/challenge/:id/leave`
+
+Remove the authenticated user from a challenge (delete their participant row).  
+After a successful response, `GET /challenge/:id` for that user should return `403` until they join again.
+
+**URL parameter:** `id` — challenge UUID  
+
+**Request body**
+
+```json
+{
+  "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+| Field    | Type   | Required | Notes                              |
+|----------|--------|----------|------------------------------------|
+| `userId` | string | ✅       | Must match the signed-in participant |
+
+**Response `200 OK`**
+
+```json
+{
+  "success": true
+}
+```
+
+**Errors**
+
+| Status | Message / situation                         | Cause                                      |
+|--------|---------------------------------------------|--------------------------------------------|
+| `403`  | Not a participant                           | `userId` not in this challenge             |
+| `404`  | Challenge not found                         | Invalid `id`                               |
+| `409`  | Optional: cannot leave (e.g. sole creator) | Backend policy — return a clear `message`  |
+
+---
+
 ### GET `/challenge/:id`
 
 Get full challenge details including all participants ranked by completed days.
@@ -1145,6 +1182,7 @@ To enable bot messages, pass `telegramGroupId` (the group's chat ID, e.g. `-1001
 
 5. POST /challenge/create        → get inviteCode  (challenge creator)
    POST /challenge/join          → join with inviteCode (members)
+   POST /challenge/:id/leave     → exit squad (removes participant)
    (backend sends joinedChallenge email automatically)
 
 6. Poll POST /checkin            → every 5 min while user is active

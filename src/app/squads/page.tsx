@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -66,7 +66,13 @@ function previewFromMessage(m: ApiChatMessage): string {
   return `${prefix}${p.text}`;
 }
 
-type SquadPreview = { text: string; time: string; unread: number };
+/** `lastActivityAt` = latest message time (ms); 0 when unknown — sorts those squads last. */
+type SquadPreview = {
+  text: string;
+  time: string;
+  unread: number;
+  lastActivityAt: number;
+};
 
 export default function SquadsPage() {
   const router = useRouter();
@@ -139,6 +145,9 @@ export default function SquadsPage() {
       const lastAct = sorted[sorted.length - 1];
       const demo = lastAct?.message ?? "Open squad chat";
       const demoTime = lastAct ? formatListTime(lastAct.createdAt) : "";
+      const mockLatestMs = lastAct
+        ? new Date(lastAct.createdAt).getTime()
+        : 0;
       const mockMsgs: { createdAt: string }[] = sorted.map((a) => ({
         createdAt: a.createdAt,
       }));
@@ -153,6 +162,7 @@ export default function SquadsPage() {
           text: demo,
           time: demoTime,
           unread,
+          lastActivityAt: mockLatestMs,
         };
       }
       setPreviews(next);
@@ -169,7 +179,12 @@ export default function SquadsPage() {
             if (!last) {
               return [
                 c.id,
-                { text: "No messages yet", time: "", unread: 0 },
+                {
+                  text: "No messages yet",
+                  time: "",
+                  unread: 0,
+                  lastActivityAt: 0,
+                },
               ] as const;
             }
             seedChatReadIfMissing(user.id, c.id, last.createdAt);
@@ -179,18 +194,39 @@ export default function SquadsPage() {
             const lastT = new Date(last.createdAt).getTime();
             const readT = lastRead ? new Date(lastRead).getTime() : NaN;
             if (lastRead && Number.isFinite(readT) && lastT <= readT) {
-              return [c.id, { text: previewText, time, unread: 0 }] as const;
+              return [
+                c.id,
+                {
+                  text: previewText,
+                  time,
+                  unread: 0,
+                  lastActivityAt: lastT,
+                },
+              ] as const;
             }
             const batch = await apiGetChatMessages(c.id, { limit: 80 });
             const unread = Math.min(
               99,
               countUnreadMessages(batch, lastRead)
             );
-            return [c.id, { text: previewText, time, unread }] as const;
+            return [
+              c.id,
+              {
+                text: previewText,
+                time,
+                unread,
+                lastActivityAt: lastT,
+              },
+            ] as const;
           } catch {
             return [
               c.id,
-              { text: "Tap to open chat", time: "", unread: 0 },
+              {
+                text: "Tap to open chat",
+                time: "",
+                unread: 0,
+                lastActivityAt: 0,
+              },
             ] as const;
           }
         })
@@ -202,6 +238,15 @@ export default function SquadsPage() {
       cancelled = true;
     };
   }, [challenges, user, listRefresh]);
+
+  const squadsSortedByLatest = useMemo(() => {
+    return [...challenges].sort((a, b) => {
+      const ta = previews[a.id]?.lastActivityAt ?? 0;
+      const tb = previews[b.id]?.lastActivityAt ?? 0;
+      if (tb !== ta) return tb - ta;
+      return a.name.localeCompare(b.name);
+    });
+  }, [challenges, previews]);
 
   if (!hydrated || !user) {
     return (
@@ -261,7 +306,7 @@ export default function SquadsPage() {
           className="flex-1 divide-y divide-black/6 overflow-y-auto bg-white"
           aria-label="Squad chats"
         >
-          {challenges.map((c) => {
+          {squadsSortedByLatest.map((c) => {
             const pv = previews[c.id];
             const unread = pv?.unread ?? 0;
             const hasUnread = unread > 0;
