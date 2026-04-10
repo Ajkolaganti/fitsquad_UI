@@ -169,10 +169,10 @@ export default function ChallengeDetailPage() {
   }, [id]);
 
   const timer = useGymSessionTimer({
-    isInside:
-      useMockTimer && location.isWithinGym && !completedToday,
+    isInside: location.isWithinGym && !completedToday,
     requiredMinutes: challenge?.durationMinutes ?? 40,
-    onGoalReached,
+    /** In API mode completion comes from check-in / server; local timer is display-only. */
+    onGoalReached: useMockTimer ? onGoalReached : undefined,
   });
 
   const gymStatus: GymStatus = completedToday
@@ -185,24 +185,16 @@ export default function ChallengeDetailPage() {
 
   const displaySeconds = useMemo(() => {
     if (completedToday) return goalSecs;
-    if (apiMode && serverElapsedMinutes != null) {
-      return Math.min(Math.floor(serverElapsedMinutes * 60), goalSecs);
-    }
-    if (useMockTimer) {
-      return timer.isComplete
-        ? Math.min(timer.elapsedSeconds, goalSecs)
-        : timer.elapsedSeconds;
-    }
-    return serverElapsedMinutes != null
-      ? Math.min(Math.floor(serverElapsedMinutes * 60), goalSecs)
-      : 0;
+    const serverSecs =
+      serverElapsedMinutes != null
+        ? Math.min(Math.floor(serverElapsedMinutes * 60), goalSecs)
+        : 0;
+    const localSecs = Math.min(timer.elapsedSeconds, goalSecs);
+    return Math.min(goalSecs, Math.max(serverSecs, localSecs));
   }, [
     completedToday,
     goalSecs,
-    apiMode,
     serverElapsedMinutes,
-    useMockTimer,
-    timer.isComplete,
     timer.elapsedSeconds,
   ]);
 
@@ -292,7 +284,8 @@ export default function ChallengeDetailPage() {
             {challenge.name}
           </h1>
           <p className="mt-1 text-sm text-pacer-muted">
-            {challenge.daysPerWeek}× / week · {challenge.durationMinutes} min goal
+            {challenge.goalSummary ??
+              `${challenge.daysPerWeek}× / week · ${challenge.durationMinutes} min goal`}
           </p>
 
           {prog && (

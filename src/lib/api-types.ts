@@ -46,6 +46,14 @@ export interface ApiChallengeParticipant {
   };
 }
 
+/** Optional gym challenge metadata — server may omit until backend supports it */
+export interface ApiChallengeFocus {
+  splitId?: string;
+  exerciseId?: string;
+  modalityId?: string;
+  customText?: string;
+}
+
 export interface ApiChallenge {
   id: string;
   name: string;
@@ -55,6 +63,10 @@ export interface ApiChallenge {
   telegramGroupId?: string | null;
   createdAt?: string;
   participants?: ApiChallengeParticipant[];
+  challengeKind?: string;
+  focus?: ApiChallengeFocus | null;
+  goalSummary?: string | null;
+  rules?: Record<string, unknown> | null;
 }
 
 export interface ApiJoinParticipant {

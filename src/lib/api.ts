@@ -218,6 +218,10 @@ export async function apiCreateChallenge(
     daysPerWeek: number;
     durationMinutes: number;
     telegramGroupId?: string;
+    challengeKind?: string;
+    focus?: Record<string, unknown>;
+    goalSummary?: string;
+    rules?: Record<string, unknown>;
   },
   creatorUserId: string
 ): Promise<Challenge> {

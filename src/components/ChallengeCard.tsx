@@ -43,8 +43,9 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
             <h3 className="truncate font-display text-lg font-semibold tracking-tight text-pacer-ink">
               {challenge.name}
             </h3>
-            <p className="mt-1 text-sm text-pacer-muted">
-              {challenge.daysPerWeek}× / week · {challenge.durationMinutes} min
+            <p className="mt-1 line-clamp-2 text-sm text-pacer-muted">
+              {challenge.goalSummary ??
+                `${challenge.daysPerWeek}× / week · ${challenge.durationMinutes} min`}
             </p>
           </div>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pacer-cream text-pacer-muted transition group-hover:bg-pacer-mint group-hover:text-pacer-primary">

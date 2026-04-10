@@ -6,6 +6,9 @@ export const MOCK_CHALLENGES: Challenge[] = [
     name: "Morning lifters",
     daysPerWeek: 4,
     durationMinutes: 40,
+    challengeKind: "split_focus",
+    focus: { splitId: "push" },
+    goalSummary: "Push (chest, shoulders, triceps) · 4×/week · 40 min",
     inviteCode: "DEMO2026",
     participants: [
       {
@@ -41,6 +44,8 @@ export const MOCK_CHALLENGES: Challenge[] = [
     name: "Weekend warriors",
     daysPerWeek: 3,
     durationMinutes: 45,
+    challengeKind: "attendance",
+    goalSummary: "3×/week · 45 min · general gym habit",
     inviteCode: "WKND01",
     participants: [
       {

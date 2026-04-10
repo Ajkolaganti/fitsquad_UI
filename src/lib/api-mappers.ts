@@ -1,10 +1,41 @@
-import type { Challenge, Participant, User } from "@/types";
+import type {
+  Challenge,
+  ChallengeFocus,
+  ChallengeKind,
+  Participant,
+  User,
+} from "@/types";
 import type {
   ApiChallenge,
+  ApiChallengeFocus,
   ApiChallengeParticipant,
   ApiLeaderboardRow,
   ApiUser,
 } from "@/lib/api-types";
+
+const CHALLENGE_KINDS: ChallengeKind[] = [
+  "attendance",
+  "split_focus",
+  "exercise_focus",
+  "custom_text",
+];
+
+function mapApiFocus(f: ApiChallengeFocus | null | undefined): ChallengeFocus | undefined {
+  if (!f || typeof f !== "object") return undefined;
+  const out: ChallengeFocus = {};
+  if (typeof f.splitId === "string") out.splitId = f.splitId;
+  if (typeof f.exerciseId === "string") out.exerciseId = f.exerciseId;
+  if (typeof f.modalityId === "string") out.modalityId = f.modalityId;
+  if (typeof f.customText === "string") out.customText = f.customText;
+  return Object.keys(out).length ? out : undefined;
+}
+
+function mapChallengeKind(raw: string | undefined | null): ChallengeKind | undefined {
+  if (!raw || typeof raw !== "string") return undefined;
+  return CHALLENGE_KINDS.includes(raw as ChallengeKind)
+    ? (raw as ChallengeKind)
+    : undefined;
+}
 
 export function mapApiUserToUser(u: ApiUser): User {
   return {
@@ -59,6 +90,13 @@ export function mapApiChallengeToChallenge(
     ? participants.find((p) => p.userId === currentUserId)
     : undefined;
 
+  const kind = mapChallengeKind(c.challengeKind);
+  const focus = mapApiFocus(c.focus ?? undefined);
+  const rules =
+    c.rules && typeof c.rules === "object" && !Array.isArray(c.rules)
+      ? (c.rules as Challenge["rules"])
+      : undefined;
+
   return {
     id: c.id,
     name: c.name,
@@ -73,6 +111,12 @@ export function mapApiChallengeToChallenge(
           weeklyGoal: c.daysPerWeek,
         }
       : undefined,
+    ...(kind ? { challengeKind: kind } : {}),
+    ...(focus ? { focus } : {}),
+    ...(typeof c.goalSummary === "string" && c.goalSummary
+      ? { goalSummary: c.goalSummary }
+      : {}),
+    ...(rules ? { rules } : {}),
   };
 }
 

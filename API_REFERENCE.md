@@ -257,7 +257,10 @@ Set `telegramGroupId` to your Telegram group's chat ID to enable bot announcemen
   "name": "April Grind",
   "daysPerWeek": 5,
   "durationMinutes": 40,
-  "telegramGroupId": "-1001234567890"
+  "telegramGroupId": "-1001234567890",
+  "challengeKind": "split_focus",
+  "focus": { "splitId": "push" },
+  "goalSummary": "Push (chest, shoulders, triceps) · 5×/week · 40 min"
 }
 ```
 
@@ -267,6 +270,10 @@ Set `telegramGroupId` to your Telegram group's chat ID to enable bot announcemen
 | `daysPerWeek`     | number | ❌       | `5`     | Target gym days per week                    |
 | `durationMinutes` | number | ❌       | `40`    | Minimum session duration to count as done  |
 | `telegramGroupId` | string | ❌       | —       | Telegram group chat ID for bot messages     |
+| `challengeKind`   | string | ❌       | —       | `attendance` \| `split_focus` \| `exercise_focus` \| `custom_text` — how the squad frames the challenge (attendance rules unchanged) |
+| `focus`           | object | ❌       | —       | Optional structured focus; e.g. `{ "splitId" }`, `{ "exerciseId", "modalityId" }`, `{ "customText" }` |
+| `goalSummary`     | string | ❌       | —       | Human-readable one-liner for UI cards       |
+| `rules`           | object | ❌       | —       | Reserved for future rule payloads (volume targets, etc.) |
 
 **Response `201 Created`**
 
@@ -280,10 +287,15 @@ Set `telegramGroupId` to your Telegram group's chat ID to enable bot announcemen
     "durationMinutes": 40,
     "inviteCode": "A3FK92BX",
     "telegramGroupId": "-1001234567890",
+    "challengeKind": "split_focus",
+    "focus": { "splitId": "push" },
+    "goalSummary": "Push (chest, shoulders, triceps) · 5×/week · 40 min",
     "createdAt": "2026-04-04T10:00:00.000Z"
   }
 }
 ```
+
+> **Gym challenge metadata:** `challengeKind`, `focus`, `goalSummary`, and `rules` are optional. The backend may ignore unknown fields until persisted. Check-in and completion logic remains GPS + minimum session duration unless workout logging is added later.
 
 ---
 
@@ -359,6 +371,9 @@ Get full challenge details including all participants ranked by completed days.
     "durationMinutes": 40,
     "inviteCode": "A3FK92BX",
     "telegramGroupId": "-1001234567890",
+    "challengeKind": "split_focus",
+    "focus": { "splitId": "push" },
+    "goalSummary": "Push (chest, shoulders, triceps) · 5×/week · 40 min",
     "createdAt": "2026-04-04T10:00:00.000Z",
     "participants": [
       {

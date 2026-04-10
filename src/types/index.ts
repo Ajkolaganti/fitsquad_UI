@@ -12,6 +12,24 @@ export interface User {
   gymLng: number | null;
 }
 
+/** How the squad frames the challenge (enforcement is still attendance-based in the API). */
+export type ChallengeKind =
+  | "attendance"
+  | "split_focus"
+  | "exercise_focus"
+  | "custom_text";
+
+/** Optional structured focus from the gym challenge catalog */
+export interface ChallengeFocus {
+  splitId?: string;
+  exerciseId?: string;
+  modalityId?: string;
+  customText?: string;
+}
+
+/** Reserved for future rules (volume targets, etc.) */
+export type ChallengeRules = Record<string, unknown>;
+
 export interface Challenge {
   id: string;
   name: string;
@@ -24,6 +42,11 @@ export interface Challenge {
     completedDaysThisWeek: number;
     weeklyGoal: number;
   };
+  challengeKind?: ChallengeKind;
+  focus?: ChallengeFocus;
+  /** Display line built from kind + attendance rules + focus */
+  goalSummary?: string;
+  rules?: ChallengeRules | null;
 }
 
 export interface Participant {
