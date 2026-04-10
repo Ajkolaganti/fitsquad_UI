@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -13,6 +13,13 @@ function JoinInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const codeFromQuery = searchParams.get("code") || "";
+  const inviterFromLink = searchParams.get("inviter")?.trim() || "";
+  const challengeTitleFromLink =
+    searchParams.get("challengeName")?.trim() || "";
+  const detailFromLink = searchParams.get("detail")?.trim() || "";
+  const hasInviteContext = Boolean(
+    inviterFromLink || challengeTitleFromLink || detailFromLink
+  );
   const { user, hydrated, upsertChallenge } = useAppStore();
   const [code, setCode] = useState(codeFromQuery);
   const [loading, setLoading] = useState(false);
@@ -23,17 +30,18 @@ function JoinInner() {
     setCode(codeFromQuery);
   }, [codeFromQuery]);
 
+  const joinPathForAuth = useMemo(() => {
+    const q = searchParams.toString();
+    return q ? `/join?${q}` : "/join";
+  }, [searchParams]);
+
   useEffect(() => {
     if (!hydrated || user) return;
-    const joinPath =
-      codeFromQuery.trim().length > 0
-        ? `/join?code=${encodeURIComponent(codeFromQuery.trim())}`
-        : "/join";
-    const next = getSafeInternalNextPath(joinPath);
+    const next = getSafeInternalNextPath(joinPathForAuth);
     router.replace(
       next ? `/login?next=${encodeURIComponent(next)}` : "/login"
     );
-  }, [hydrated, user, router, codeFromQuery]);
+  }, [hydrated, user, router, joinPathForAuth]);
 
   useEffect(() => {
     if (!hydrated || !user || !codeFromQuery.trim()) return;
@@ -140,6 +148,41 @@ function JoinInner() {
         Back
       </Link>
 
+      {hasInviteContext ? (
+        <div className="mb-6 rounded-[22px] border border-pacer-mint bg-pacer-mint/60 p-5 shadow-sm backdrop-blur-xl">
+          {inviterFromLink ? (
+            <p className="text-[15px] leading-relaxed text-pacer-ink">
+              <span className="font-semibold">{inviterFromLink}</span> sent you an
+              invite to join{" "}
+              {challengeTitleFromLink ? (
+                <>
+                  the challenge{" "}
+                  <span className="font-semibold">
+                    &ldquo;{challengeTitleFromLink}&rdquo;
+                  </span>{" "}
+                  on fitsquad.
+                </>
+              ) : (
+                <>a challenge on fitsquad.</>
+              )}
+            </p>
+          ) : challengeTitleFromLink ? (
+            <p className="text-[15px] leading-relaxed text-pacer-ink">
+              You&apos;re invited to join{" "}
+              <span className="font-semibold">
+                &ldquo;{challengeTitleFromLink}&rdquo;
+              </span>{" "}
+              on fitsquad.
+            </p>
+          ) : null}
+          {detailFromLink ? (
+            <p className="mt-3 text-sm leading-relaxed text-pacer-muted">
+              {detailFromLink}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mb-8">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-pacer-mint">
           <span className="text-3xl">🔗</span>
@@ -148,7 +191,9 @@ function JoinInner() {
           Join a Challenge
         </h1>
         <p className="mt-1.5 text-sm text-pacer-muted">
-          Paste the invite code your friend shared with you.
+          {hasInviteContext
+            ? "Confirm the code below, then join your squad."
+            : "Paste the invite code your friend shared with you."}
         </p>
       </div>
 

@@ -29,6 +29,11 @@ import {
   checkinIndicatesNotAtGym,
   checkinIndicatesSessionCompleted,
 } from "@/lib/checkin-ui";
+import {
+  buildInviteJoinUrl,
+  buildInviteScheduleDetail,
+  buildInviteShareMessage,
+} from "@/lib/invite-share";
 import { leaveChallengeForUser } from "@/lib/leave-challenge";
 import { getMockChallenge } from "@/lib/mock-data";
 import { getSafeInternalNextPath } from "@/lib/safe-next-path";
@@ -236,14 +241,30 @@ export default function ChallengeDetailPage() {
       ? leaderboardRows
       : challenge?.participants ?? [];
 
-  const inviteUrl =
-    typeof window !== "undefined" && challenge?.inviteCode
-      ? `${window.location.origin}/join?code=${challenge.inviteCode}`
-      : "";
+  const { inviteUrl, inviteShareText } = useMemo(() => {
+    if (typeof window === "undefined" || !challenge?.inviteCode || !user) {
+      return { inviteUrl: "", inviteShareText: "" };
+    }
+    const detail = buildInviteScheduleDetail(challenge);
+    const url = buildInviteJoinUrl(window.location.origin, challenge.inviteCode, {
+      challengeName: challenge.name,
+      inviterName: user.name,
+      detail,
+    });
+    return {
+      inviteUrl: url,
+      inviteShareText: buildInviteShareMessage({
+        inviteUrl: url,
+        challengeName: challenge.name,
+        inviterName: user.name,
+        detail,
+      }),
+    };
+  }, [challenge, user]);
 
   async function copyInviteLink() {
-    if (!inviteUrl) return;
-    await navigator.clipboard.writeText(inviteUrl);
+    if (!inviteShareText) return;
+    await navigator.clipboard.writeText(inviteShareText);
     setInviteCopied(true);
     setTimeout(() => setInviteCopied(false), 2000);
   }
@@ -345,10 +366,14 @@ export default function ChallengeDetailPage() {
       {challenge.inviteCode && inviteUrl ? (
         <div className="mb-5 rounded-[22px] border border-pacer-border bg-white p-5 shadow-sm backdrop-blur-xl">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
-            Invite link
+            Invite message
           </p>
-          <p className="break-all rounded-xl bg-pacer-cream px-3 py-2.5 font-mono text-xs text-pacer-ink">
-            {inviteUrl}
+          <p className="whitespace-pre-wrap rounded-xl bg-pacer-cream px-3 py-2.5 text-sm leading-relaxed text-pacer-ink">
+            {inviteShareText}
+          </p>
+          <p className="mt-2 break-all text-[11px] text-pacer-muted">
+            Link only:{" "}
+            <span className="font-mono text-pacer-ink">{inviteUrl}</span>
           </p>
           <button
             type="button"
@@ -356,7 +381,7 @@ export default function ChallengeDetailPage() {
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white transition active:scale-[0.99] hover:bg-pacer-primary-hover"
           >
             <Copy className="h-4 w-4" />
-            {inviteCopied ? "Copied!" : "Copy link"}
+            {inviteCopied ? "Copied!" : "Copy invite"}
           </button>
           <p className="mt-3 text-center text-xs text-pacer-muted">
             Share this link anytime so friends can join this challenge.

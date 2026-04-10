@@ -17,6 +17,11 @@ import {
   filterExercisesByModality,
   normalizeFocus,
 } from "@/data/gym-challenge-catalog";
+import {
+  buildInviteJoinUrl,
+  buildInviteScheduleDetail,
+  buildInviteShareMessage,
+} from "@/lib/invite-share";
 import type { Challenge, ChallengeFocus, ChallengeKind } from "@/types";
 
 const KIND_OPTIONS: { id: ChallengeKind; label: string; hint: string }[] = [
@@ -130,6 +135,34 @@ export default function CreateChallengePage() {
     );
   }, [modalityFilter, exerciseQuery]);
 
+  const { inviteUrl, inviteShareText } = useMemo(() => {
+    if (typeof window === "undefined" || !created?.inviteCode || !user) {
+      return { inviteUrl: "", inviteShareText: "" };
+    }
+    const detail = buildInviteScheduleDetail(created);
+    const url = buildInviteJoinUrl(window.location.origin, created.inviteCode, {
+      challengeName: created.name,
+      inviterName: user.name,
+      detail,
+    });
+    return {
+      inviteUrl: url,
+      inviteShareText: buildInviteShareMessage({
+        inviteUrl: url,
+        challengeName: created.name,
+        inviterName: user.name,
+        detail,
+      }),
+    };
+  }, [created, user]);
+
+  async function copyLink() {
+    if (!inviteShareText) return;
+    await navigator.clipboard.writeText(inviteShareText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   if (!hydrated || !user) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -222,17 +255,6 @@ export default function CreateChallengePage() {
     }
   }
 
-  const inviteUrl =
-    typeof window !== "undefined" && created?.inviteCode
-      ? `${window.location.origin}/join?code=${created.inviteCode}`
-      : "";
-
-  async function copyLink() {
-    await navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
   const inputClass =
     "w-full rounded-2xl border border-pacer-border bg-white px-4 py-3.5 text-base text-pacer-ink placeholder-zinc-400 shadow-sm transition focus:border-pacer-primary/50 focus:ring-2 focus:ring-pacer-primary/15";
 
@@ -287,10 +309,14 @@ export default function CreateChallengePage() {
 
           <div className="rounded-[22px] border border-pacer-border bg-white p-5 shadow-sm backdrop-blur-xl">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
-              Invite link
+              Invite message
             </p>
-            <p className="break-all rounded-xl bg-pacer-cream px-3 py-2.5 font-mono text-xs text-pacer-ink">
-              {inviteUrl}
+            <p className="whitespace-pre-wrap rounded-xl bg-pacer-cream px-3 py-2.5 text-sm leading-relaxed text-pacer-ink">
+              {inviteShareText}
+            </p>
+            <p className="mt-2 break-all text-[11px] text-pacer-muted">
+              Link only:{" "}
+              <span className="font-mono text-pacer-ink">{inviteUrl}</span>
             </p>
             <div className="mt-4 flex gap-3">
               <button
@@ -299,7 +325,7 @@ export default function CreateChallengePage() {
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white transition active:scale-[0.99] hover:bg-pacer-primary-hover"
               >
                 <Copy className="h-4 w-4" />
-                {copied ? "Copied!" : "Copy link"}
+                {copied ? "Copied!" : "Copy invite"}
               </button>
               <Link
                 href={`/challenge/${created.id}`}
