@@ -10,6 +10,7 @@ import { authSignOut } from "@/lib/auth-session";
 import { apiGetChallenge, isApiConfigured } from "@/lib/api";
 import { buildSquadActivityItems } from "@/lib/squad-activity";
 import { useAppStore } from "@/store/useAppStore";
+import { userNeedsGymOnboarding } from "@/lib/gym-onboarding";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -27,6 +28,11 @@ export default function DashboardPage() {
     if (hydrated && !user) {
       router.replace("/login");
     }
+  }, [hydrated, user, router]);
+
+  useEffect(() => {
+    if (!hydrated || !user || !userNeedsGymOnboarding(user)) return;
+    router.replace("/onboarding/gym");
   }, [hydrated, user, router]);
 
   useEffect(() => {
@@ -57,6 +63,17 @@ export default function DashboardPage() {
   }, [challenges, user]);
 
   if (!hydrated || !user) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-11 w-11 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
+          <p className="text-sm text-pacer-muted">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userNeedsGymOnboarding(user)) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">

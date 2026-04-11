@@ -437,8 +437,10 @@ Get full challenge details including all participants ranked by completed days.
 
 ### POST `/location/update`
 
-Save or update the user's gym GPS coordinates.  
-**Must be called before the first check-in** — the app uses these coordinates as the gym's fixed location.
+Save or update the user's **gym** location (one per user, shared across all challenges).  
+The app selects the place via **Google Places** in the browser; the backend should treat `placeId` as authoritative when present: call **Place Details** (server-side), confirm the place is fitness-related, and persist coordinates from Google (not blindly trusting client `lat`/`lng`).
+
+**Must be called before the first check-in** — check-in uses these coordinates as the gym's fixed location.
 
 **Request body**
 
@@ -446,15 +448,21 @@ Save or update the user's gym GPS coordinates.
 {
   "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "lat": 12.9716,
-  "lng": 77.5946
+  "lng": 77.5946,
+  "placeId": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+  "name": "Example Fitness",
+  "formattedAddress": "123 Main St, City"
 }
 ```
 
-| Field    | Type   | Required | Notes                         |
-|----------|--------|----------|-------------------------------|
-| `userId` | string | ✅       | `id` from `/auth/login`       |
-| `lat`    | number | ✅       | Latitude (decimal degrees)    |
-| `lng`    | number | ✅       | Longitude (decimal degrees)   |
+| Field               | Type   | Required | Notes |
+|---------------------|--------|----------|--------|
+| `userId`            | string | ✅       | `id` from `/auth/login` |
+| `lat`               | number | ✅       | Latitude (decimal degrees); should match Place Details when `placeId` is sent |
+| `lng`               | number | ✅       | Longitude (decimal degrees) |
+| `placeId`           | string | ⬜       | Google Place ID — **recommended**; backend validates via Places API |
+| `name`              | string | ⬜       | Display name from Places (UI convenience) |
+| `formattedAddress`  | string | ⬜       | Address from Places (UI convenience) |
 
 **Response `200 OK`**
 
@@ -465,7 +473,10 @@ Save or update the user's gym GPS coordinates.
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Ajay Singh",
     "gymLat": 12.9716,
-    "gymLng": 77.5946
+    "gymLng": 77.5946,
+    "gymName": "Example Fitness",
+    "gymAddress": "123 Main St, City",
+    "gymPlaceId": "ChIJN1t_tDeuEmsRUsoyG83frY4"
   }
 }
 ```

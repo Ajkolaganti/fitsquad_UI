@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLogo } from "@/components/AppLogo";
 import { syncSessionToApp } from "@/lib/auth-session";
+import { postAuthNavigate } from "@/lib/gym-onboarding";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /**
@@ -20,8 +21,8 @@ export default function AuthCallbackPage() {
       .getSession()
       .then(async ({ data: { session } }) => {
         if (session) {
-          await syncSessionToApp(session);
-          router.replace("/dashboard");
+          const u = await syncSessionToApp(session);
+          postAuthNavigate(router, u);
         } else {
           setMessage("Could not complete sign-in. Try the link again.");
           setTimeout(() => router.replace("/login"), 2500);

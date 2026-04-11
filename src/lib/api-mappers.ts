@@ -46,6 +46,9 @@ export function mapApiUserToUser(u: ApiUser): User {
     phone: u.phone ?? undefined,
     gymLat: u.gymLat ?? null,
     gymLng: u.gymLng ?? null,
+    gymName: u.gymName ?? undefined,
+    gymAddress: u.gymAddress ?? undefined,
+    gymPlaceId: u.gymPlaceId ?? undefined,
   };
 }
 

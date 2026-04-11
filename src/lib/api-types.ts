@@ -20,6 +20,9 @@ export interface ApiUser {
   phone?: string | null;
   gymLat?: number | null;
   gymLng?: number | null;
+  gymName?: string | null;
+  gymAddress?: string | null;
+  gymPlaceId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

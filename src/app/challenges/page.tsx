@@ -7,6 +7,7 @@ import { Link2, Plus, PlusCircle, Sparkles } from "lucide-react";
 import { ChallengeCard } from "@/components/ChallengeCard";
 import { apiGetChallenge, isApiConfigured } from "@/lib/api";
 import { useAppStore } from "@/store/useAppStore";
+import { userNeedsGymOnboarding } from "@/lib/gym-onboarding";
 
 export default function ChallengesPage() {
   const router = useRouter();
@@ -15,6 +16,11 @@ export default function ChallengesPage() {
 
   useEffect(() => {
     if (hydrated && !user) router.replace("/login");
+  }, [hydrated, user, router]);
+
+  useEffect(() => {
+    if (!hydrated || !user || !userNeedsGymOnboarding(user)) return;
+    router.replace("/onboarding/gym?next=%2Fchallenges");
   }, [hydrated, user, router]);
 
   useEffect(() => {
@@ -46,6 +52,14 @@ export default function ChallengesPage() {
   }, [hydrated, user, challengeCount]);
 
   if (!hydrated || !user) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (userNeedsGymOnboarding(user)) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />

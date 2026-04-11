@@ -1,22 +1,25 @@
 "use client";
 
-import { MapPin, Navigation, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { MapPin, RefreshCw } from "lucide-react";
 import type { Coordinates } from "@/types";
 import { GYM_RADIUS_METERS } from "@/lib/geo";
 import type { UseLocationResult } from "@/hooks/useLocation";
 
 interface LocationTrackerProps {
   gym: Coordinates | null;
+  /** Human-readable gym line (e.g. from Google Places). */
+  gymLabel?: string | null;
   location: UseLocationResult;
-  onSaveGymHere?: () => void;
-  canSaveGym: boolean;
+  /** When user has no gym yet — link to onboarding. */
+  gymSetupHref?: string;
 }
 
 export function LocationTracker({
   gym,
+  gymLabel,
   location,
-  onSaveGymHere,
-  canSaveGym,
+  gymSetupHref,
 }: LocationTrackerProps) {
   const {
     distanceToGymMeters,
@@ -70,9 +73,14 @@ export function LocationTracker({
         </div>
 
         {gym && (
-          <p className="mt-4 rounded-2xl bg-pacer-cream px-3 py-2.5 font-mono text-xs text-pacer-muted">
-            Gym: {gym.lat.toFixed(5)}, {gym.lng.toFixed(5)}
-          </p>
+          <div className="mt-4 space-y-1 rounded-2xl bg-pacer-cream px-3 py-2.5 text-xs text-pacer-muted">
+            {gymLabel ? (
+              <p className="text-sm font-medium text-pacer-ink">{gymLabel}</p>
+            ) : null}
+            <p className="font-mono">
+              {gym.lat.toFixed(5)}, {gym.lng.toFixed(5)}
+            </p>
+          </div>
         )}
 
         {permission === "denied" && (
@@ -103,7 +111,7 @@ export function LocationTracker({
                 ? "Getting your position…"
                 : gym
                   ? "Waiting for GPS fix…"
-                  : "Save a gym location to measure distance."}
+                  : "Set your gym to measure distance."}
             </div>
           )}
           {accuracyMeters != null && (
@@ -113,16 +121,14 @@ export function LocationTracker({
           )}
         </div>
 
-        {canSaveGym && onSaveGymHere && (
-          <button
-            type="button"
-            onClick={onSaveGymHere}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white shadow-lg transition active:scale-[0.99] hover:bg-pacer-primary-hover"
+        {!gym && gymSetupHref ? (
+          <Link
+            href={gymSetupHref}
+            className="mt-4 flex w-full items-center justify-center rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white shadow-lg transition active:scale-[0.99] hover:bg-pacer-primary-hover"
           >
-            <Navigation className="h-4 w-4" />
-            Save current spot as gym
-          </button>
-        )}
+            Choose your gym
+          </Link>
+        ) : null}
       </div>
     </div>
   );

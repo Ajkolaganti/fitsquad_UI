@@ -10,6 +10,10 @@ export interface User {
   phone?: string | null;
   gymLat: number | null;
   gymLng: number | null;
+  /** From Google Places (or demo); shown in UI when set. */
+  gymName?: string | null;
+  gymAddress?: string | null;
+  gymPlaceId?: string | null;
 }
 
 /** How the squad frames the challenge (enforcement is still attendance-based in the API). */

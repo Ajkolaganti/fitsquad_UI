@@ -14,7 +14,7 @@ import {
   getApiErrorMessage,
   isApiConfigured,
 } from "@/lib/api";
-import { readNextFromLocation } from "@/lib/safe-next-path";
+import { postAuthNavigate } from "@/lib/gym-onboarding";
 import { refreshChallengesFromServer } from "@/lib/user-challenges";
 import type { User } from "@/types";
 
@@ -86,7 +86,7 @@ export default function LoginPage() {
       const user = await apiLogin({ email: em, password: pw });
       setUser(user);
       await refreshChallengesFromServer(user.id);
-      router.replace(readNextFromLocation() ?? "/dashboard");
+      postAuthNavigate(router, user);
     } catch (e: unknown) {
       setErr(getApiErrorMessage(e));
     } finally {
@@ -201,8 +201,8 @@ export default function LoginPage() {
           return;
         }
         if (data.session) {
-          await syncSessionToApp(data.session);
-          router.replace(readNextFromLocation() ?? "/dashboard");
+          const u = await syncSessionToApp(data.session);
+          postAuthNavigate(router, u);
           return;
         }
         return;
@@ -214,8 +214,8 @@ export default function LoginPage() {
       });
       if (error) throw error;
       if (data.session) {
-        await syncSessionToApp(data.session);
-        router.replace(readNextFromLocation() ?? "/dashboard");
+        const u = await syncSessionToApp(data.session);
+        postAuthNavigate(router, u);
       }
     } catch (e: unknown) {
       const msg =
@@ -233,8 +233,9 @@ export default function LoginPage() {
     setErr(null);
     setLoading(true);
     try {
-      setUser(mockLogin(demoName));
-      router.replace(readNextFromLocation() ?? "/dashboard");
+      const u = mockLogin(demoName);
+      setUser(u);
+      postAuthNavigate(router, u);
     } finally {
       setLoading(false);
     }

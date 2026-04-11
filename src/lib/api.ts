@@ -284,6 +284,10 @@ export async function apiPostLocation(body: {
   userId: string;
   lat: number;
   lng: number;
+  /** Google Place ID — backend should verify via Place Details (Places API). */
+  placeId?: string;
+  name?: string;
+  formattedAddress?: string;
 }): Promise<User> {
   const { data } = await api.post<{ success: boolean; user: ApiUser }>(
     "/location/update",

@@ -46,7 +46,15 @@ interface AppState {
   setHydrated: (v: boolean) => void;
   setUser: (user: User | null) => void;
   logout: () => void;
-  setGymLocation: (lat: number, lng: number) => void;
+  setGymLocation: (
+    lat: number,
+    lng: number,
+    meta?: {
+      gymName?: string | null;
+      gymAddress?: string | null;
+      gymPlaceId?: string | null;
+    }
+  ) => void;
   setChallenges: (challenges: Challenge[]) => void;
   upsertChallenge: (challenge: Challenge) => void;
   removeChallenge: (challengeId: string) => void;
@@ -87,10 +95,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  setGymLocation: (lat, lng) => {
+  setGymLocation: (lat, lng, meta) => {
     const u = get().user;
     if (!u) return;
-    const next = { ...u, gymLat: lat, gymLng: lng };
+    const next: User = { ...u, gymLat: lat, gymLng: lng };
+    if (meta) {
+      if (meta.gymName !== undefined) next.gymName = meta.gymName;
+      if (meta.gymAddress !== undefined) next.gymAddress = meta.gymAddress;
+      if (meta.gymPlaceId !== undefined) next.gymPlaceId = meta.gymPlaceId;
+    }
     set({ user: next });
     if (typeof window !== "undefined") {
       localStorage.setItem("firsquad_user", JSON.stringify(next));
@@ -153,6 +166,18 @@ function migrateLegacyUser(raw: Record<string, unknown>): User {
         : undefined,
     gymLat: typeof raw.gymLat === "number" ? raw.gymLat : null,
     gymLng: typeof raw.gymLng === "number" ? raw.gymLng : null,
+    gymName:
+      typeof raw.gymName === "string" || raw.gymName === null
+        ? (raw.gymName as string | null)
+        : undefined,
+    gymAddress:
+      typeof raw.gymAddress === "string" || raw.gymAddress === null
+        ? (raw.gymAddress as string | null)
+        : undefined,
+    gymPlaceId:
+      typeof raw.gymPlaceId === "string" || raw.gymPlaceId === null
+        ? (raw.gymPlaceId as string | null)
+        : undefined,
   };
 }
 

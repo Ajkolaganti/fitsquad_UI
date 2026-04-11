@@ -22,6 +22,7 @@ import {
   buildInviteScheduleDetail,
   buildInviteShareMessage,
 } from "@/lib/invite-share";
+import { userNeedsGymOnboarding } from "@/lib/gym-onboarding";
 import type { Challenge, ChallengeFocus, ChallengeKind } from "@/types";
 
 const KIND_OPTIONS: { id: ChallengeKind; label: string; hint: string }[] = [
@@ -125,6 +126,11 @@ export default function CreateChallengePage() {
     if (hydrated && !user) router.replace("/login");
   }, [hydrated, user, router]);
 
+  useEffect(() => {
+    if (!hydrated || !user || !userNeedsGymOnboarding(user)) return;
+    router.replace("/onboarding/gym?next=%2Fcreate-challenge");
+  }, [hydrated, user, router]);
+
   const filteredExercises = useMemo(() => {
     const byMod = filterExercisesByModality(modalityFilter);
     const q = exerciseQuery.trim().toLowerCase();
@@ -164,6 +170,14 @@ export default function CreateChallengePage() {
   }
 
   if (!hydrated || !user) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (userNeedsGymOnboarding(user)) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />

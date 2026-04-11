@@ -20,7 +20,6 @@ import {
   apiGetChallenge,
   apiGetLeaderboard,
   apiPostCheckin,
-  apiPostLocation,
   getApiErrorMessage,
   isApiConfigured,
 } from "@/lib/api";
@@ -37,6 +36,7 @@ import {
 import { leaveChallengeForUser } from "@/lib/leave-challenge";
 import { getMockChallenge } from "@/lib/mock-data";
 import { getSafeInternalNextPath } from "@/lib/safe-next-path";
+import { userNeedsGymOnboarding } from "@/lib/gym-onboarding";
 import type { GymStatus, Participant } from "@/types";
 
 function todayKey() {
@@ -51,7 +51,7 @@ export default function ChallengeDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
-  const { user, hydrated, upsertChallenge, setUser } = useAppStore();
+  const { user, hydrated, upsertChallenge } = useAppStore();
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [completedToday, setCompletedToday] = useState(false);
   const [leaderboardRows, setLeaderboardRows] = useState<Participant[]>([]);
@@ -78,6 +78,14 @@ export default function ChallengeDetailPage() {
     const next = getSafeInternalNextPath(path);
     router.replace(
       next ? `/login?next=${encodeURIComponent(next)}` : "/login"
+    );
+  }, [hydrated, user, router, id]);
+
+  useEffect(() => {
+    if (!hydrated || !user || !userNeedsGymOnboarding(user)) return;
+    const back = `/challenge/${id}`;
+    router.replace(
+      `/onboarding/gym?next=${encodeURIComponent(back)}`
     );
   }, [hydrated, user, router, id]);
 
@@ -215,27 +223,6 @@ export default function ChallengeDetailPage() {
   const s = displaySeconds % 60;
   const formatted = `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 
-  const saveGymHere = async () => {
-    if (!location.coords || !user) return;
-    if (apiMode) {
-      try {
-        const u = await apiPostLocation({
-          userId: user.id,
-          lat: location.coords.lat,
-          lng: location.coords.lng,
-        });
-        setUser({ ...user, ...u });
-      } catch (e: unknown) {
-        setLoadErr(getApiErrorMessage(e));
-      }
-    } else {
-      useAppStore.getState().setGymLocation(
-        location.coords.lat,
-        location.coords.lng
-      );
-    }
-  };
-
   const leaderboardData =
     leaderboardRows.length > 0
       ? leaderboardRows
@@ -291,6 +278,14 @@ export default function ChallengeDetailPage() {
     );
   }
 
+  if (userNeedsGymOnboarding(user)) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-pacer-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   if (loadErr || !challenge) {
     return (
       <div className="px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
@@ -307,6 +302,11 @@ export default function ChallengeDetailPage() {
   }
 
   const prog = challenge.myProgress;
+
+  const gymLabel =
+    user.gymName && user.gymName.trim()
+      ? [user.gymName, user.gymAddress?.trim()].filter(Boolean).join(" · ")
+      : null;
 
   return (
     <div className="px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
@@ -363,32 +363,6 @@ export default function ChallengeDetailPage() {
         </div>
       </div>
 
-      {challenge.inviteCode && inviteUrl ? (
-        <div className="mb-5 rounded-[22px] border border-pacer-border bg-white p-5 shadow-sm backdrop-blur-xl">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
-            Invite message
-          </p>
-          <p className="whitespace-pre-wrap rounded-xl bg-pacer-cream px-3 py-2.5 text-sm leading-relaxed text-pacer-ink">
-            {inviteShareText}
-          </p>
-          <p className="mt-2 break-all text-[11px] text-pacer-muted">
-            Link only:{" "}
-            <span className="font-mono text-pacer-ink">{inviteUrl}</span>
-          </p>
-          <button
-            type="button"
-            onClick={() => void copyInviteLink()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white transition active:scale-[0.99] hover:bg-pacer-primary-hover"
-          >
-            <Copy className="h-4 w-4" />
-            {inviteCopied ? "Copied!" : "Copy invite"}
-          </button>
-          <p className="mt-3 text-center text-xs text-pacer-muted">
-            Share this link anytime so friends can join this challenge.
-          </p>
-        </div>
-      ) : null}
-
       {/* Timer */}
       <div className="mb-5">
         <Timer
@@ -404,9 +378,9 @@ export default function ChallengeDetailPage() {
       <div className="mb-5">
         <LocationTracker
           gym={gym}
+          gymLabel={gymLabel}
           location={location}
-          canSaveGym={Boolean(location.coords && !gym)}
-          onSaveGymHere={() => void saveGymHere()}
+          gymSetupHref={`/onboarding/gym?next=${encodeURIComponent(`/challenge/${id}`)}`}
         />
       </div>
 
@@ -490,6 +464,32 @@ export default function ChallengeDetailPage() {
           </div>
         )}
       </div>
+
+      {challenge.inviteCode && inviteUrl ? (
+        <div className="mt-5 rounded-[22px] border border-pacer-border bg-white p-5 shadow-sm backdrop-blur-xl">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
+            Invite message
+          </p>
+          <p className="whitespace-pre-wrap rounded-xl bg-pacer-cream px-3 py-2.5 text-sm leading-relaxed text-pacer-ink">
+            {inviteShareText}
+          </p>
+          <p className="mt-2 break-all text-[11px] text-pacer-muted">
+            Link only:{" "}
+            <span className="font-mono text-pacer-ink">{inviteUrl}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => void copyInviteLink()}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pacer-primary py-3.5 text-sm font-semibold text-white transition active:scale-[0.99] hover:bg-pacer-primary-hover"
+          >
+            <Copy className="h-4 w-4" />
+            {inviteCopied ? "Copied!" : "Copy invite"}
+          </button>
+          <p className="mt-3 text-center text-xs text-pacer-muted">
+            Share this link anytime so friends can join this challenge.
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
