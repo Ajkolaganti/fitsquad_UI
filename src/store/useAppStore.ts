@@ -78,10 +78,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       return;
     }
-    const storedChallenges = loadChallengesSnapshot(user.id);
-    set({ user, challenges: storedChallenges });
+    let storedPayload: Record<string, unknown> | null = null;
     if (typeof window !== "undefined") {
-      localStorage.setItem("firsquad_user", JSON.stringify(user));
+      try {
+        const raw = localStorage.getItem("firsquad_user");
+        if (raw) storedPayload = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        storedPayload = null;
+      }
+    }
+    const prev = get().user;
+    const merged = mergeGymIfApiMissing(user, prev, storedPayload);
+    const storedChallenges = loadChallengesSnapshot(merged.id);
+    set({ user: merged, challenges: storedChallenges });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("firsquad_user", JSON.stringify(merged));
     }
   },
 
@@ -143,6 +154,35 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (u) persistChallengesSnapshot(u.id, list);
   },
 }));
+
+/** If the API returns no gym coords, keep the same user's last saved gym from memory or disk. */
+function mergeGymIfApiMissing(
+  incoming: User,
+  prev: User | null,
+  storedPayload: Record<string, unknown> | null
+): User {
+  if (incoming.gymLat != null && incoming.gymLng != null) return incoming;
+  const candidates: (User | null)[] = [
+    prev && prev.id === incoming.id ? prev : null,
+    storedPayload ? migrateLegacyUser(storedPayload) : null,
+  ];
+  const donor = candidates.find(
+    (u) =>
+      u &&
+      u.id === incoming.id &&
+      u.gymLat != null &&
+      u.gymLng != null
+  );
+  if (!donor) return incoming;
+  return {
+    ...incoming,
+    gymLat: donor.gymLat,
+    gymLng: donor.gymLng,
+    gymName: incoming.gymName ?? donor.gymName,
+    gymAddress: incoming.gymAddress ?? donor.gymAddress,
+    gymPlaceId: incoming.gymPlaceId ?? donor.gymPlaceId,
+  };
+}
 
 function migrateLegacyUser(raw: Record<string, unknown>): User {
   const telegramId =

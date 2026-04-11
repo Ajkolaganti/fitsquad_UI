@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Link2, Plus, PlusCircle, Sparkles } from "lucide-react";
 import { ChallengeCard } from "@/components/ChallengeCard";
+import { StickySectionLabel } from "@/components/StickySectionLabel";
 import { apiGetChallenge, isApiConfigured } from "@/lib/api";
 import { useAppStore } from "@/store/useAppStore";
 import { userNeedsGymOnboarding } from "@/lib/gym-onboarding";
@@ -131,11 +132,17 @@ export default function ChallengesPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          {challenges.map((c) => (
-            <ChallengeCard key={c.id} challenge={c} />
-          ))}
-        </div>
+        <>
+          <StickySectionLabel>All challenges</StickySectionLabel>
+          <p className="mb-3 text-xs text-pacer-muted">
+            Tap a card for check-in, timer, and squad feed.
+          </p>
+          <div className="space-y-3">
+            {challenges.map((c) => (
+              <ChallengeCard key={c.id} challenge={c} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

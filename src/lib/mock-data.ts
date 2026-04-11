@@ -74,17 +74,17 @@ export const MOCK_CHALLENGES: Challenge[] = [
 export const MOCK_ACTIVITIES: ActivityItem[] = [
   {
     id: "a1",
-    message: "Ajay checked in at gym 💪",
+    message: "Ajay checked in at gym",
     createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
   },
   {
     id: "a2",
-    message: "John missed today 😴",
+    message: "John missed today",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
   },
   {
     id: "a3",
-    message: "Sam completed today's workout 🔥",
+    message: "Sam completed today's workout",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
   },
 ];

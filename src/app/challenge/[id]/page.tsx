@@ -12,7 +12,10 @@ import Link from "next/link";
 import { ArrowLeft, Copy, Flame, LogOut, Users } from "lucide-react";
 import { ChallengeGymFeed } from "@/components/ChallengeGymFeed";
 import { LocationTracker } from "@/components/LocationTracker";
+import { ProgressRing } from "@/components/ProgressRing";
+import { StickySectionLabel } from "@/components/StickySectionLabel";
 import { Timer } from "@/components/Timer";
+import { streakVsWeeklyFraction } from "@/lib/dashboard-momentum";
 import { useLocation } from "@/hooks/useLocation";
 import { useGymSessionTimer } from "@/hooks/useGymSessionTimer";
 import { useAppStore } from "@/store/useAppStore";
@@ -302,6 +305,8 @@ export default function ChallengeDetailPage() {
   }
 
   const prog = challenge.myProgress;
+  const momentumFrac = prog ? streakVsWeeklyFraction(prog) : 0;
+  const momentumPct = Math.round(momentumFrac * 100);
 
   const gymLabel =
     user.gymName && user.gymName.trim()
@@ -332,15 +337,28 @@ export default function ChallengeDetailPage() {
           </p>
 
           {prog && (
-            <div className="mt-4 flex items-center gap-3">
-              <span className="flex items-center gap-1.5 rounded-full bg-pacer-cream px-3 py-1.5 text-xs font-semibold text-pacer-ink">
-                <Flame className="h-3.5 w-3.5 text-ember-500" />
-                {prog.streak} day streak
-              </span>
-              <span className="flex items-center gap-1.5 rounded-full bg-pacer-cream px-3 py-1.5 text-xs font-semibold text-pacer-ink">
-                <Users className="h-3.5 w-3.5 text-pacer-primary" />
-                {challenge.participants.length} in squad
-              </span>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <ProgressRing
+                progress={momentumFrac}
+                size={72}
+                strokeWidth={7}
+                aria-label={`Streak momentum ${momentumPct} percent of weekly goal`}
+              >
+                <span className="font-display text-sm font-bold tabular-nums text-pacer-ink">
+                  {momentumPct}
+                  <span className="text-[10px] text-pacer-muted">%</span>
+                </span>
+              </ProgressRing>
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-pacer-cream px-3 py-1.5 text-xs font-semibold text-pacer-ink">
+                  <Flame className="h-3.5 w-3.5 text-ember-500" aria-hidden />
+                  {prog.streak} day streak
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-pacer-cream px-3 py-1.5 text-xs font-semibold text-pacer-ink">
+                  <Users className="h-3.5 w-3.5 text-pacer-primary" aria-hidden />
+                  {challenge.participants.length} in squad
+                </span>
+              </div>
             </div>
           )}
 
@@ -355,14 +373,15 @@ export default function ChallengeDetailPage() {
                 <span className="tabular-nums">{prog.weeklyGoal}</span>× / week
               </p>
               <p className="mt-2 text-[11px] leading-relaxed text-pacer-muted">
-                Streak is per this challenge and comes from the server (usually
-                consecutive days with a completed session).
+                Ring compares current streak to weekly session goal (not calendar
+                week). Streak comes from the server.
               </p>
             </div>
           )}
         </div>
       </div>
 
+      <StickySectionLabel>Today&apos;s session</StickySectionLabel>
       {/* Timer */}
       <div className="mb-5">
         <Timer
@@ -374,16 +393,18 @@ export default function ChallengeDetailPage() {
         />
       </div>
 
+      <StickySectionLabel>Location</StickySectionLabel>
       {/* Location */}
       <div className="mb-5">
         <LocationTracker
           gym={gym}
           gymLabel={gymLabel}
           location={location}
-          gymSetupHref={`/onboarding/gym?next=${encodeURIComponent(`/challenge/${id}`)}`}
+          gymSetupHref="/settings"
         />
       </div>
 
+      <StickySectionLabel>Gym feed</StickySectionLabel>
       {/* Gym activity — who trained today & session context (squad chat lives under Squads) */}
       <div className="mb-5">
         <ChallengeGymFeed

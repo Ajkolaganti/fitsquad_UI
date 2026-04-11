@@ -8,7 +8,15 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, LogOut, Paperclip, Send, Smile, X } from "lucide-react";
+import {
+  ArrowLeft,
+  LogOut,
+  MessageCircle,
+  Paperclip,
+  Send,
+  Smile,
+  X,
+} from "lucide-react";
 import type { ApiChatMessage } from "@/lib/api-types";
 import {
   apiFetchChatMessageDecrypted,
@@ -463,8 +471,10 @@ export function SquadChatThread({
             </li>
           ) : messages.length === 0 ? (
             <li className="py-16 text-center">
-              <p className="text-3xl opacity-90">💬</p>
-              <p className="mt-2 text-[13px] text-pacer-muted">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-white text-[#8696a0] shadow-sm">
+                <MessageCircle className="h-7 w-7" strokeWidth={1.5} aria-hidden />
+              </span>
+              <p className="mt-4 text-[13px] text-pacer-muted">
                 No messages yet. Say hi to the squad.
               </p>
             </li>

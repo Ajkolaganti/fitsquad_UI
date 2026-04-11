@@ -41,7 +41,7 @@ function previewFromMessage(m: ApiChatMessage): string {
       typeof m.content === "string" && m.content.trim()
         ? m.content.trim()
         : "";
-    const t = cap ? `📷 ${cap}` : "📷 Photo";
+    const t = cap ? `Photo: ${cap}` : "Photo";
     return m.user?.name ? `${m.user.name}: ${t}` : t;
   }
   if (m.type === "URL") {
@@ -53,13 +53,13 @@ function previewFromMessage(m: ApiChatMessage): string {
     const url =
       typeof c === "object" && c && "url" in c ? String(c.url) : "";
     const label = text || url || "Link";
-    const t = `🔗 ${label}`;
+    const t = `Link: ${label}`;
     return m.user?.name ? `${m.user.name}: ${t}` : t;
   }
   const raw = typeof m.content === "string" ? m.content : "";
   const p = parseChatContent(raw);
   if (p.kind === "image") {
-    const t = p.caption ? `📷 ${p.caption}` : "📷 Photo";
+    const t = p.caption ? `Photo: ${p.caption}` : "Photo";
     return m.user?.name ? `${m.user.name}: ${t}` : t;
   }
   const prefix = m.user?.name ? `${m.user.name}: ` : "";

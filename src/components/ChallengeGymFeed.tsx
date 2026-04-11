@@ -1,6 +1,7 @@
 "use client";
 
-import { Dumbbell, Sparkles, Trophy } from "lucide-react";
+import { Dumbbell, Flame, Sparkles, Trophy } from "lucide-react";
+import { RankMark } from "@/components/RankMark";
 import type { Participant } from "@/types";
 
 type MyGymRowState = {
@@ -62,8 +63,6 @@ function initial(name: string) {
   const t = name.trim();
   return t ? t[0]!.toUpperCase() : "?";
 }
-
-const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
 interface ChallengeGymFeedProps {
   participants: Participant[];
@@ -195,7 +194,6 @@ export function ChallengeGymFeed({
             const last = p.lastCheckin;
             const today = last && isSameLocalDay(last);
             const displayRank = p.rank ?? i + 1;
-            const medal = displayRank <= 3 ? RANK_MEDALS[displayRank - 1] : null;
 
             let detail = "";
             if (isMe) {
@@ -247,15 +245,7 @@ export function ChallengeGymFeed({
                 } ${isMe ? "bg-pacer-mint/25" : ""}`}
               >
                 <div className="flex w-8 shrink-0 flex-col items-center pt-0.5">
-                  {medal ? (
-                    <span className="text-lg leading-none" aria-hidden>
-                      {medal}
-                    </span>
-                  ) : (
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pacer-cream text-[11px] font-bold tabular-nums text-pacer-muted">
-                      {displayRank}
-                    </span>
-                  )}
+                  <RankMark rank={displayRank} />
                 </div>
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pacer-mint to-pacer-mist font-display text-sm font-bold text-pacer-leaf">
                   {initial(p.name)}
@@ -281,8 +271,9 @@ export function ChallengeGymFeed({
                     {detail}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-800">
-                      🔥 {p.streak}d streak
+                    <span className="inline-flex items-center gap-0.5 rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-800">
+                      <Flame className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
+                      {p.streak}d streak
                     </span>
                     <span className="inline-flex items-center rounded-md bg-pacer-cream px-2 py-0.5 text-[10px] font-semibold text-pacer-ink">
                       {p.completedDays} challenge days

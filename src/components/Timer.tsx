@@ -48,9 +48,9 @@ export function Timer({
 
   const statusDot = isDone ? GREEN : isActive ? "#0ea5e9" : "#94a3a8";
   const message = isDone
-    ? "Session complete — you crushed it 🔥"
+    ? "Session complete — goal hit for today"
     : isActive
-      ? "Stay in zone — timer running ⚡"
+      ? "Stay in the zone — timer running"
       : "Head to your gym to start";
 
   const centerColor = isDone ? GREEN : isActive ? "#14221a" : "#94a3a8";

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Flame, Users, ChevronRight } from "lucide-react";
+import { ProgressRing } from "@/components/ProgressRing";
+import { streakVsWeeklyFraction } from "@/lib/dashboard-momentum";
 import type { Challenge } from "@/types";
 
 interface ChallengeCardProps {
@@ -22,6 +24,8 @@ function getAccent(id: string) {
 
 export function ChallengeCard({ challenge }: ChallengeCardProps) {
   const progress = challenge.myProgress;
+  const momentumFrac = progress ? streakVsWeeklyFraction(progress) : 0;
+  const momentumPct = Math.round(momentumFrac * 100);
   const accent = getAccent(challenge.id);
 
   return (
@@ -42,9 +46,26 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
                 `${challenge.daysPerWeek}× / week · ${challenge.durationMinutes} min`}
             </p>
           </div>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pacer-cream text-pacer-muted transition group-hover:bg-pacer-mint group-hover:text-pacer-primary">
-            <ChevronRight className="h-4 w-4" />
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            {progress && (
+              <ProgressRing
+                progress={momentumFrac}
+                size={48}
+                strokeWidth={5}
+                trackColor="rgba(20, 34, 26, 0.08)"
+                progressColor="#0d9f6e"
+                className="opacity-95"
+                aria-label={`Streak momentum ${momentumPct} percent of weekly goal`}
+              >
+                <span className="font-display text-[11px] font-bold tabular-nums text-pacer-ink">
+                  {momentumPct}
+                </span>
+              </ProgressRing>
+            )}
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-pacer-cream text-pacer-muted transition group-hover:bg-pacer-mint group-hover:text-pacer-primary">
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">

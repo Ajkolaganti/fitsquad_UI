@@ -12,6 +12,7 @@ import {
   isApiConfigured,
 } from "@/lib/api";
 import { getSafeInternalNextPath } from "@/lib/safe-next-path";
+import { dismissGymOnboardingPrompt } from "@/lib/gym-onboarding-prompt";
 import { useAppStore } from "@/store/useAppStore";
 import { userNeedsGymOnboarding } from "@/lib/gym-onboarding";
 
@@ -78,6 +79,7 @@ function OnboardingGymInner() {
           gymPlaceId: selected.placeId,
         });
       }
+      dismissGymOnboardingPrompt(user.id);
       router.replace(nextPath ?? "/dashboard");
     } catch (e: unknown) {
       setSubmitErr(getApiErrorMessage(e));
@@ -102,6 +104,7 @@ function OnboardingGymInner() {
           gymAddress: null,
           gymPlaceId: null,
         });
+        dismissGymOnboardingPrompt(user.id);
         setDemoBusy(false);
         router.replace(nextPath ?? "/dashboard");
       },
@@ -193,6 +196,29 @@ function OnboardingGymInner() {
           >
             {busy ? "Saving…" : "Save gym"}
           </button>
+
+          {!changeMode ? (
+            <button
+              type="button"
+              disabled={busy || demoBusy}
+              onClick={() => {
+                dismissGymOnboardingPrompt(user.id);
+                router.replace(nextPath ?? "/dashboard");
+              }}
+              className="mt-3 w-full text-center text-sm font-medium text-pacer-muted underline-offset-2 transition hover:text-pacer-ink hover:underline"
+            >
+              Skip for now — I&apos;ll set this in settings
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={busy || demoBusy}
+              onClick={() => router.replace(nextPath ?? "/settings")}
+              className="mt-3 w-full text-center text-sm font-medium text-pacer-muted underline-offset-2 transition hover:text-pacer-ink hover:underline"
+            >
+              Cancel
+            </button>
+          )}
 
           {!apiMode && !mapsKey ? (
             <button

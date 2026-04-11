@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Link2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { apiJoinChallenge, getApiErrorMessage, isApiConfigured } from "@/lib/api";
 import { getMockChallenge } from "@/lib/mock-data";
@@ -184,8 +184,8 @@ function JoinInner() {
       ) : null}
 
       <div className="mb-8">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-pacer-mint">
-          <span className="text-3xl">🔗</span>
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-pacer-mint text-pacer-primary">
+          <Link2 className="h-8 w-8" strokeWidth={2} aria-hidden />
         </div>
         <h1 className="font-display text-3xl font-bold tracking-tight text-pacer-ink">
           Join a Challenge

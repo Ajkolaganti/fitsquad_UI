@@ -1,5 +1,7 @@
 "use client";
 
+import { Trophy } from "lucide-react";
+import { RankMark } from "@/components/RankMark";
 import type { Participant } from "@/types";
 
 interface LeaderboardProps {
@@ -20,8 +22,6 @@ function getAvatarGradient(name: string) {
   return AVATAR_GRADIENTS[name.charCodeAt(0) % AVATAR_GRADIENTS.length];
 }
 
-const RANK_MEDALS = ["🥇", "🥈", "🥉"];
-
 export function Leaderboard({ participants, currentUserId }: LeaderboardProps) {
   const sorted = [...participants].sort(
     (a, b) => b.completedDays - a.completedDays
@@ -31,11 +31,13 @@ export function Leaderboard({ participants, currentUserId }: LeaderboardProps) {
   return (
     <div className="overflow-hidden rounded-[22px] border border-pacer-border bg-white shadow-glass-sm backdrop-blur-xl">
       <div className="border-b border-pacer-border px-5 py-4">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🏆</span>
-          <div>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-pacer-mint text-pacer-primary">
+            <Trophy className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
+          </span>
+          <div className="min-w-0">
             <h3 className="font-display text-base font-semibold text-pacer-ink">
-              Squad Ranking
+              Squad ranking
             </h3>
             <p className="text-xs text-pacer-muted">By total gym days in this challenge</p>
           </div>
@@ -54,12 +56,8 @@ export function Leaderboard({ participants, currentUserId }: LeaderboardProps) {
               key={p.userId}
               className={`flex items-center gap-3 px-5 py-4 ${isSelf ? "bg-pacer-mint/40" : ""}`}
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center text-base">
-                {rank <= 3 ? (
-                  RANK_MEDALS[rank - 1]
-                ) : (
-                  <span className="text-sm font-bold text-pacer-muted">{rank}</span>
-                )}
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+                <RankMark rank={rank} />
               </span>
 
               <div
@@ -98,7 +96,9 @@ export function Leaderboard({ participants, currentUserId }: LeaderboardProps) {
                       style={{ width: `${barPct}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-pacer-muted">{p.streak}🔥</span>
+                  <span className="tabular-nums text-[10px] font-medium text-pacer-muted">
+                    {p.streak}d streak
+                  </span>
                 </div>
               </div>
 

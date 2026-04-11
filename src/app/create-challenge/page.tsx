@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, ExternalLink, Search } from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, PartyPopper, Search } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import {
   apiCreateChallenge,
@@ -22,6 +22,7 @@ import {
   buildInviteScheduleDetail,
   buildInviteShareMessage,
 } from "@/lib/invite-share";
+import { StickySectionLabel } from "@/components/StickySectionLabel";
 import { userNeedsGymOnboarding } from "@/lib/gym-onboarding";
 import type { Challenge, ChallengeFocus, ChallengeKind } from "@/types";
 
@@ -311,7 +312,11 @@ export default function CreateChallengePage() {
       {created ? (
         <div className="space-y-4">
           <div className="rounded-[22px] border border-pacer-mint bg-pacer-mint/70 p-6 text-center shadow-sm backdrop-blur-xl">
-            <div className="mb-3 text-4xl">🎉</div>
+            <div className="mb-3 flex justify-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-white/90 text-pacer-primary shadow-sm">
+                <PartyPopper className="h-7 w-7" strokeWidth={2} aria-hidden />
+              </span>
+            </div>
             <h2 className="font-display text-xl font-bold text-pacer-ink">
               {created.name}
             </h2>
@@ -353,6 +358,7 @@ export default function CreateChallengePage() {
         </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-6">
+          <StickySectionLabel>Challenge details</StickySectionLabel>
           <div>
             <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
               Challenge name
@@ -520,6 +526,7 @@ export default function CreateChallengePage() {
             </div>
           )}
 
+          <StickySectionLabel>Weekly commitment</StickySectionLabel>
           <div>
             <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wider text-pacer-muted">
               Days per week
