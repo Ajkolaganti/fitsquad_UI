@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Challenge, User } from "@/types";
 import { setAuthToken } from "@/lib/api";
 import { clearBackendTokens } from "@/lib/auth-tokens";
+import { syncGymToSupabaseUserMetadata } from "@/lib/supabase-gym-metadata";
 
 const CHALLENGES_STORAGE_KEY = "firsquad_challenges_v1";
 
@@ -94,6 +95,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (typeof window !== "undefined") {
       localStorage.setItem("firsquad_user", JSON.stringify(merged));
     }
+    if (merged.gymLat != null && merged.gymLng != null) {
+      void syncGymToSupabaseUserMetadata(merged);
+    }
   },
 
   logout: () => {
@@ -119,6 +123,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (typeof window !== "undefined") {
       localStorage.setItem("firsquad_user", JSON.stringify(next));
     }
+    void syncGymToSupabaseUserMetadata(next);
   },
 
   setChallenges: (challenges) => {

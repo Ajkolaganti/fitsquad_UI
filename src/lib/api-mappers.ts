@@ -12,6 +12,7 @@ import type {
   ApiLeaderboardRow,
   ApiUser,
 } from "@/lib/api-types";
+import { extractGymFromUserPayload } from "@/lib/user-gym-normalize";
 
 const CHALLENGE_KINDS: ChallengeKind[] = [
   "attendance",
@@ -38,17 +39,25 @@ function mapChallengeKind(raw: string | undefined | null): ChallengeKind | undef
 }
 
 export function mapApiUserToUser(u: ApiUser): User {
+  const r = u as unknown as Record<string, unknown>;
+  const g = extractGymFromUserPayload(r);
+  const telegramId =
+    typeof u.telegramId === "string" && u.telegramId
+      ? u.telegramId
+      : typeof r.telegram_id === "string"
+        ? r.telegram_id
+        : "";
   return {
-    id: u.id,
-    name: u.name,
-    telegramId: typeof u.telegramId === "string" ? u.telegramId : "",
+    id: String(r.id ?? u.id ?? ""),
+    name: typeof u.name === "string" && u.name ? u.name : "Athlete",
+    telegramId,
     email: u.email ?? undefined,
     phone: u.phone ?? undefined,
-    gymLat: u.gymLat ?? null,
-    gymLng: u.gymLng ?? null,
-    gymName: u.gymName ?? undefined,
-    gymAddress: u.gymAddress ?? undefined,
-    gymPlaceId: u.gymPlaceId ?? undefined,
+    gymLat: g.gymLat ?? u.gymLat ?? null,
+    gymLng: g.gymLng ?? u.gymLng ?? null,
+    gymName: g.gymName !== undefined ? g.gymName : u.gymName,
+    gymAddress: g.gymAddress !== undefined ? g.gymAddress : u.gymAddress,
+    gymPlaceId: g.gymPlaceId !== undefined ? g.gymPlaceId : u.gymPlaceId,
   };
 }
 

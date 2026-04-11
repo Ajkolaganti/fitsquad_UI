@@ -6,6 +6,7 @@ import {
   mapLeaderboardRows,
   mapLoginResponseUser,
 } from "@/lib/api-mappers";
+import { mergeUserWithSubmittedGym } from "@/lib/user-gym-normalize";
 import { persistBackendTokens } from "@/lib/auth-tokens";
 import type {
   ApiChallenge,
@@ -289,14 +290,50 @@ export async function apiPostLocation(body: {
   name?: string;
   formattedAddress?: string;
 }): Promise<User> {
-  const { data } = await api.post<{ success: boolean; user: ApiUser }>(
-    "/location/update",
-    body
-  );
-  if (!data.success || !data.user) {
-    throw new Error("Failed to save gym location");
+  type LocResponse = {
+    success: boolean;
+    user?: ApiUser;
+    message?: string;
+  };
+  let data: LocResponse;
+  try {
+    const res = await api.post<LocResponse>("/location/update", body);
+    data = res.data;
+  } catch (err) {
+    const ax = err as AxiosError<{ message?: string }>;
+    if (axios.isAxiosError(ax) && ax.response?.data?.message) {
+      throw new Error(ax.response.data.message);
+    }
+    throw err;
   }
-  return mapApiUserToUser(data.user);
+  if (!data.success) {
+    throw new Error(data.message || "Failed to save gym location");
+  }
+
+  let user: User | null = data.user ? mapApiUserToUser(data.user) : null;
+  if (!user) {
+    try {
+      user = await apiGetCurrentUser();
+    } catch {
+      throw new Error(
+        data.message ||
+          "Gym location may have been saved, but the server did not return your profile. Try refreshing the page."
+      );
+    }
+  }
+
+  user = mergeUserWithSubmittedGym(user, body);
+
+  try {
+    const fresh = await apiGetCurrentUser();
+    if (fresh.gymLat != null && fresh.gymLng != null) {
+      return fresh;
+    }
+  } catch {
+    /* use merged user from POST + form body */
+  }
+
+  return user;
 }
 
 export async function apiPostCheckin(body: {
