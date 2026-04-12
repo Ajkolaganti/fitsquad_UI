@@ -26,9 +26,11 @@ export default function SettingsPage() {
   const gymLine =
     user.gymName && user.gymName.trim()
       ? [user.gymName, user.gymAddress?.trim()].filter(Boolean).join(" · ")
-      : user.gymLat != null && user.gymLng != null
-        ? `${user.gymLat.toFixed(4)}, ${user.gymLng.toFixed(4)}`
-        : null;
+      : user.gymAddress?.trim()
+        ? user.gymAddress.trim()
+        : user.gymLat != null && user.gymLng != null
+          ? "Your gym is saved"
+          : null;
   const hasGymCoords = user.gymLat != null && user.gymLng != null;
 
   return (

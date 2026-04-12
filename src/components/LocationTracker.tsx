@@ -73,13 +73,12 @@ export function LocationTracker({
         </div>
 
         {gym && (
-          <div className="mt-4 space-y-1 rounded-2xl bg-pacer-cream px-3 py-2.5 text-xs text-pacer-muted">
-            {gymLabel ? (
-              <p className="text-sm font-medium text-pacer-ink">{gymLabel}</p>
-            ) : null}
-            <p className="font-mono">
-              {gym.lat.toFixed(5)}, {gym.lng.toFixed(5)}
-            </p>
+          <div className="mt-4 rounded-2xl bg-pacer-cream px-3 py-2.5 text-sm text-pacer-ink">
+            {gymLabel?.trim() ? (
+              <p className="font-medium leading-snug">{gymLabel.trim()}</p>
+            ) : (
+              <p className="text-pacer-muted">Your gym is saved for check-ins.</p>
+            )}
           </div>
         )}
 

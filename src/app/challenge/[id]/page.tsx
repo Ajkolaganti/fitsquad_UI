@@ -311,7 +311,7 @@ export default function ChallengeDetailPage() {
   const gymLabel =
     user.gymName && user.gymName.trim()
       ? [user.gymName, user.gymAddress?.trim()].filter(Boolean).join(" · ")
-      : null;
+      : user.gymAddress?.trim() || null;
 
   return (
     <div className="px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
